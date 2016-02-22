@@ -1,0 +1,6 @@
+[package]
+name = "Rust_Chatserver"
+version = "0.1.0"
+authors = ["jameswhang <sungyoonwhang2017@u.northwestern.edu>"]
+
+[dependencies]
