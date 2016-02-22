@@ -1,6 +1,6 @@
 [package]
-name = "Rust_Chatserver"
+name = "chichat"
 version = "0.1.0"
-authors = ["jameswhang <sungyoonwhang2017@u.northwestern.edu>"]
-
+authors = ["adellahlou <alahlou@u.northwestern.edu", "jameswhang <sungyoonwhang2017@u.northwestern.edu>"] 
 [dependencies]
+chrono ="*"
