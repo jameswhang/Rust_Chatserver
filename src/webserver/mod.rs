@@ -56,9 +56,9 @@ use std::fs::File;
 use std::env;
 
 mod http;
-mod logger;
+mod httplogger;
 use self::http::{HttpRequest, HttpResponse, HttpStatusCode};
-use self::logger::{HttpLogger};
+use self::httplogger::{HttpLogger};
 
 
 
