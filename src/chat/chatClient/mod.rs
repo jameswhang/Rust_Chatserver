@@ -1,7 +1,9 @@
+#[doc="
+
+"]
+
 use super::chatter::{Chatter};
 use std::io::{self, Read};
-
-
 
 
 pub struct ChatClient {
