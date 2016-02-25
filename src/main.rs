@@ -1,4 +1,5 @@
 extern crate chitchat;
+extern crate chat;
 
 use chat::chatServer::{ChatServer};
 use chat::chatClient::{ChatClient};
@@ -12,7 +13,7 @@ fn main(){
 	let mode = env::nth(1).unwrap();
 
 	if mode == "s" {
-		unimplemented!("Need to grab local ip address");
+		unimplemented!();
 	} else if mode == "u" {
 		if let Ok(server_address) = SocketAddr::from_str(env::args.nth(2).unwrap()) {
 			start_client(server_address);

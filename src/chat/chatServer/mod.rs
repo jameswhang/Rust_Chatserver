@@ -1,7 +1,8 @@
 use super::types::*;
+use std::collections::HashMap;
+use super::chatter::{Chatter};
+use super::ChatRoom::*;
 
-type UserMap = HashMap<Id, Chatter>;
-type RoomMap = HashMap<Id, ChatRoom>;
 
 pub struct ChatServer {
 	name : String,
@@ -12,8 +13,9 @@ pub struct ChatServer {
 
 
 impl ChatServer {
-	pub fn new(name : String) {
+	pub fn new(name : String) -> ChatServer {
 		ChatServer {
+            name: name,
 			active_users : UserMap::new(),
 			chat_rooms : RoomMap::new(),
 		}

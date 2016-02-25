@@ -4,6 +4,8 @@
 
 use super::chatter::{Chatter};
 use std::io::{self, Read};
+use std::collections::HashMap;
+use std::net::{TcpStream, SocketAddr};
 
 
 pub struct ChatClient {
@@ -15,13 +17,15 @@ impl ChatClient {
 	pub fn new(server_addr : SocketAddr, chatter: Chatter) -> ChatClient {
 		ChatClient {
 			server_addr : server_addr,
-			chatter: Chatter,
+			chatter: chatter,
 		}
 	}
 
 	pub fn start(server_address : SocketAddr) {
 		let username = get_username();
-		let mut chatter = Chatter::new();
+        // Setting default server port to 8080
+        let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
+		let mut chatter = Chatter::new(username, stream);
 	}
 }
 
@@ -33,6 +37,6 @@ fn get_username() -> String {
 fn read_username() -> String {
 	let mut username = String::new();
 
-	while let Err(_) = try!(io::stdin().read_to_string(&mut username)) {}
+    try!(io::stdin().read_to_string(&mut username));
 	username
 }
