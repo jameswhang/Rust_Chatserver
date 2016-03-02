@@ -10,13 +10,12 @@ use super::messages::*;
 use self::ChatterStatus::*;
 use self::ActionStatus::*;
 
-
-
 #[derive(Debug, PartialEq)]
 pub enum ChatterStatus {
 	SelectingAction,
 	SelectingRoom,
-	InRoom(Id),
+    LeavingRoom,
+	InRoom,
 }
 
 
@@ -27,28 +26,14 @@ pub enum ActionStatus {
 	Failed,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct Chatter {
-	username : Id,
-	connection : TcpStream,
-	status : ChatterStatus, 
+	username: Id,
+	connection: TcpStream,
+	status: ChatterStatus, 
 }
-
-/*
-impl PartialEq for TcpStream {
-    fn eq(&self, other: &TcpStream) -> bool {
-        if let Some(my_peer) = self.peer_addr() {
-            if let Some(other_peer) = other.peer_addr() {
-                return my_peer == other_peer;
-            }
-        }
-    }
-}
-*/
-
 
 impl Chatter {
-	
 	pub fn new(username : String, connection : TcpStream) -> Chatter {
 		Chatter { 
 			username : username as Id,
@@ -76,7 +61,7 @@ impl Chatter {
 	//technically have to match on the results of send messge
 	pub fn send_chat(&mut self, chat_message : String) -> Result<ActionStatus, ActionStatus> {
 		match self.status {
-			InRoom(room_id) => {
+			InRoom => {
 				self.send_message(MessageType::Chat, &chat_message);
 				Ok(OK)
 			},
@@ -91,9 +76,9 @@ impl Chatter {
 	
 	pub fn leave_room(&mut self) -> Result<ActionStatus, ActionStatus> {
 		match self.status {
-			InRoom(room) => {
+			InRoom => {
 				self.send_message(MessageType::Leave, &"".to_string());
-				Ok(OK); // not elegant // i agree
+				Ok(ActionStatus::OK) // not elegant // i agree
 			},
 
 			_ => Err(Invalid),

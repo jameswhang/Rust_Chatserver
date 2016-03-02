@@ -37,6 +37,6 @@ fn get_username() -> String {
 fn read_username() -> String {
 	let mut username = String::new();
 
-    try!(io::stdin().read_to_string(&mut username));
+    //try!(io::stdin().read_to_string(&mut username));
 	username
 }
