@@ -54,6 +54,17 @@ impl ChatClient {
 	pub fn receive_message(&mut self, message: String) -> Option<Message> {
 		unimplemented!();
 	}
+
+	pub fn read(&mut self) {
+		let input: String;
+		loop {
+			input = read_from_stream(&mut self.connection);
+			if input.len() > 0 {
+				let message = self.receive_message(input);
+				// do something with message
+			}
+		}
+	}
 }
 
 fn get_username() -> String {
@@ -72,4 +83,26 @@ fn read_username() -> String {
 			"Unknown User".to_string()
 		}
 	}
+}
+
+pub fn read_from_stream(stream: &mut TcpStream) -> String {
+    const BUF_SIZE: usize = 128;
+    let mut buf = [0; BUF_SIZE];
+    let mut result = String::new();
+    let mut addition: String;
+
+    // continually pass in a buffer until nothing left to read
+    while let Ok(length) = stream.read(&mut buf[..]) {
+        // add data in buffer to results string
+        addition = String::from_utf8(buf.to_owned()).unwrap();
+        result.push_str(&addition);
+        buf = [0; BUF_SIZE];
+
+        // break if all of input has been read
+        if length < BUF_SIZE {
+            break;
+        }
+    }
+
+    result
 }
