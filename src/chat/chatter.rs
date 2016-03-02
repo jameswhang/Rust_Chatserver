@@ -30,7 +30,7 @@ pub enum ActionStatus {
 #[derive(Debug, PartialEq)]
 pub struct Chatter {
 	username : Id,
-	connection : &TcpStream,
+	connection : TcpStream,
 	status : ChatterStatus, 
 }
 

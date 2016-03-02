@@ -1,6 +1,6 @@
-pub mod chatClient;
-pub mod chatServer;
+pub mod chat_client;
+pub mod chat_server;
 pub mod chatter;
 pub mod types;
 pub mod messages;
-pub mod ChatRoom;
+pub mod chat_room;
