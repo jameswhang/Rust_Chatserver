@@ -6,7 +6,7 @@
 
 use std::net::TcpStream;
 use super::types::*;
-use super::messages::*;
+use super::message::*;
 use self::ChatterStatus::*;
 use self::ActionStatus::*;
 
@@ -30,12 +30,12 @@ pub enum ActionStatus {
 pub struct Chatter {
 	username: Id,
 	connection: TcpStream,
-	status: ChatterStatus, 
+	status: ChatterStatus,
 }
 
 impl Chatter {
 	pub fn new(username : String, connection : TcpStream) -> Chatter {
-		Chatter { 
+		Chatter {
 			username : username as Id,
 			connection : connection,
 			status : ChatterStatus::SelectingAction,
@@ -57,7 +57,7 @@ impl Chatter {
 			_ => Err(Invalid),
 		}
 	}
-	
+
 	//technically have to match on the results of send messge
 	pub fn send_chat(&mut self, chat_message : String) -> Result<ActionStatus, ActionStatus> {
 		match self.status {
@@ -70,10 +70,10 @@ impl Chatter {
 		}
 	}
 
-	pub fn receive_message(&mut self) -> Option<ChatMessage> {
+	pub fn receive_message(&mut self) -> Option<Message> {
 		unimplemented!();
 	}
-	
+
 	pub fn leave_room(&mut self) -> Result<ActionStatus, ActionStatus> {
 		match self.status {
 			InRoom => {

@@ -3,29 +3,56 @@
 "]
 
 use super::chatter::{Chatter};
+use super::message::{MessageType, Message};
 use std::io::{self, Read};
 use std::collections::HashMap;
 use std::net::{TcpStream, SocketAddr};
 
+pub type Id = String;
+
+#[derive(Debug, PartialEq)]
+pub enum ClientStatus {
+	SelectingAction,
+	SelectingRoom,
+    LeavingRoom,
+	InRoom,
+}
+
+
+#[derive(Debug, PartialEq)]
+pub enum ActionStatus {
+	OK,
+	Invalid,
+	Failed,
+}
 
 pub struct ChatClient {
-	server_addr : SocketAddr,
-	chatter : Chatter,
+	username: Id,
+	connection: TcpStream,
+	status: ClientStatus,
 }
 
 impl ChatClient {
-	pub fn new(server_addr : SocketAddr, chatter: Chatter) -> ChatClient {
+	pub fn new(username: String) -> ChatClient {
+		// default port 8080 for now
+		let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
+		let username = get_username();
+		println!("New client connected!");
+
 		ChatClient {
-			server_addr : server_addr,
-			chatter: chatter,
+			username: username as Id,
+			connection: stream,
+			status: ClientStatus::SelectingAction,
 		}
 	}
 
-	pub fn start(server_address : SocketAddr) {
-		let username = get_username();
-        // Setting default server port to 8080
-        let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
-		let mut chatter = Chatter::new(username, stream);
+	pub fn send_message(&mut self, message_type: MessageType, message: String) ->
+		Result<ActionStatus, ActionStatus> {
+			unimplemented!();
+		}
+
+	pub fn receive_message(&mut self, message: String) -> Option<Message> {
+		unimplemented!();
 	}
 }
 
@@ -37,6 +64,12 @@ fn get_username() -> String {
 fn read_username() -> String {
 	let mut username = String::new();
 
-    //try!(io::stdin().read_to_string(&mut username));
-	username
+	match io::stdin().read_to_string(&mut username) {
+		Ok(_) => {
+			username
+		},
+		Err(_) => {
+			"Unknown User".to_string()
+		}
+	}
 }

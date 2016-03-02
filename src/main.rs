@@ -8,7 +8,7 @@ use std::net::{SocketAddr};
 fn main(){
     let mut args: Vec<_> = env::args().collect();
 	if args.len() < 3 {
-		panic!("usage: chitchat [mode] [server_ip:]server_port"); 
+		panic!("usage: cargo run [mode] [server_ip]:[server_port]");
 	}
 
 
