@@ -1,5 +1,5 @@
 use super::types::{Id};
-pub mod connecfour;
+pub mod connectfour;
 //pub mod boggle;
 
 #[derive(Clone, PartialEq)]
@@ -26,6 +26,5 @@ pub trait Game {
 pub trait TurnBasedGame : Game {
     fn whos_turn(&self) -> Player;
 }
-
 
 pub type GResult<T> = Result<GameState, T>;
