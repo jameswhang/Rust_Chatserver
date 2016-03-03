@@ -11,8 +11,8 @@ pub enum MessageType {
 }
 
 /// Uniquely Identifiable Message Struct via message_id, date, sender
-/// Gurantee is that the same user will not generate the same id at the same time
-#[derive(Debug, PartialEq)]
+/// Design requires that the user will not generate the same id at the same time
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Message  {
 	message_id : Id,
 	date : Time,
@@ -23,12 +23,12 @@ pub struct Message  {
 }
 
 impl Message {
-	pub fn new(message_id : Id, date : Time, sender : Id, receiver : Id, message_type : MessageType, message : String) -> Message {
+	pub fn new(message_id : String, date : Time, sender : String, receiver : String, message_type : MessageType, message : String) -> Message {
    	Message {
-		message_id : message_id,
+		message_id : message_id as Id,
    		date : date,
-   		sender : sender,
-   		receiver : receiver,
+   		sender : sender as Id,
+   		receiver : receiver as Id,
    		message_type : message_type,
    		message : message
    	}
