@@ -1,5 +1,4 @@
 extern crate chrono;
-// extern crate webserver;
 use std::sync::{Arc, Mutex};
 use std::fs::File;
 use std::io::Write;
@@ -14,7 +13,7 @@ type LogfileLock = Arc<Mutex<File>>;
 pub struct Logger(LogfileLock);
 
 impl Logger {
-    pub fn new(filepath : &str) ->HttpLogger{
+    pub fn new(filepath : &str) -> Logger{
         match File::create(filepath) {
             Ok(logfile) => {
                 Logger(Arc::new(Mutex::new(logfile)))
