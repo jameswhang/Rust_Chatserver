@@ -10,3 +10,12 @@ pub type Id = String;
 pub type UserMap = HashMap<Id, Chatter>;
 pub type RoomMap = HashMap<Id, ChatRoom>;
 pub type Time = DateTime<UTC>;
+
+
+/// Used for feedback on
+#[derive(Debug, PartialEq)]
+pub enum ActionStatus {
+	OK,
+	Invalid,
+	Failed,
+}

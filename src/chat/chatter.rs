@@ -7,9 +7,13 @@
 use std::net::TcpStream;
 use super::types::*;
 use super::message::*;
-use self::ChatterStatus::*;
-use self::ActionStatus::*;
 
+// used for convenience
+use self::ChatterStatus::*;
+use super::types::ActionStatus::*;
+
+
+/// Used to record the current state of the chatter
 #[derive(Debug, PartialEq)]
 pub enum ChatterStatus {
 	SelectingAction,
@@ -18,13 +22,6 @@ pub enum ChatterStatus {
 	InRoom,
 }
 
-
-#[derive(Debug, PartialEq)]
-pub enum ActionStatus {
-	OK,
-	Invalid,
-	Failed,
-}
 
 #[derive(Debug)]
 pub struct Chatter {
