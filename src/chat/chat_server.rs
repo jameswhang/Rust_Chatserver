@@ -1,12 +1,27 @@
 extern crate mio;
 extern crate bytes;
 
-use super::types::*;
+use std::io::Cursor;
+use std::mem;
 use std::collections::HashMap;
+use std::net::SocketAddr;
+
+use super::types::*;
 use super::chatter::{Chatter};
 use super::chat_room::*;
-use mio::tcp::*;
-use mio::util::Slab;
+
+use self::mio::tcp::*;
+use self::mio::util::Slab;
+use self::mio::{TryRead, TryWrite};
+
+use self::bytes::{Buf, Take};
+
+
+// TODO: When making room, fix this.
+// Token used to register the TCP listener socket. 
+// Only one listener so to make things simpler, we track down the token as 
+// a constant
+const SERVER: mio::Token = mio::Token(0);
 
 pub struct ChatServer {
     server: TcpListener,
@@ -14,6 +29,11 @@ pub struct ChatServer {
 	chat_rooms : RoomMap,
 }
 
+enum State {
+    Reading(Vec<u8>),
+    Writing(Take<Cursor<Vec<u8>>>),
+    Closed,
+}
 
 // This struct represents the status of a single connection to the client
 pub struct ConnectionStatus {
@@ -50,7 +70,7 @@ impl mio::Handler for ChatServer {
             SERVER => {
                 // server socket is ready to be operated
 
-                assert!(event.is_readable());
+                assert!(events.is_readable());
 
                 match self.server.accept() {
                     // new client connection has been established
@@ -286,7 +306,7 @@ pub fn start(address: SocketAddr) {
     let mut event_loop = mio::EventLoop::new().unwrap();
 
     // Register the server's socket with the event loop
-    event_loop.register(&register, SERVER).unwrap();
+    event_loop.register(&server, SERVER).unwrap();
 
     // Create a new ChatServer instance that trakcs the state of the server
     let mut cs = ChatServer::new(server);
