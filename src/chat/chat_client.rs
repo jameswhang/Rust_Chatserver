@@ -9,6 +9,9 @@ use self::mio::{TryRead, TryWrite};
 use self::mio::tcp::TcpStream;
 use self::mio::util::Slab;
 use self::bytes::Buf;
+
+use super::chat_server::ChatServer;
+
 use std::{mem, str};
 use std::io::Cursor;
 use std::net::SocketAddr;
@@ -47,7 +50,7 @@ impl ChatClient {
 }
 
 impl mio::Handler for ChatClient {
-	fn ready(&mut self, event_loop: &mut mio::EventLoop<Server>, token: mio::Token, events: mio::EventSet) {
+	fn ready(&mut self, event_loop: &mut mio::EventLoop<ChatServer>, token: mio::Token, events: mio::EventSet) {
 		println!("Socket is ready! Token = {:?}; Events = {:?}", token, events);
 		self.connections[token].ready(event_loop, events);
 
@@ -65,7 +68,7 @@ impl mio::Handler for ChatClient {
 
 // Connection methods
 impl Connection {
-	fn ready(&mut self, event_loop: &mut mio::EventLoop<Server>, events: mio::EventSet) {
+	fn ready(&mut self, event_loop: &mut mio::EventLoop<ChatServer>, events: mio::EventSet) {
 		println!("Connection state = {:?}", self.state);
 
 		// handle event according to the current state of the connection
@@ -84,7 +87,7 @@ impl Connection {
 		}
 	}
 
-	fn read(&mut self, event_loop: &mut mio::EventLoop<Server>) {
+	fn read(&mut self, event_loop: &mut mio::EventLoop<ChatServer>) {
 		match self.socket.try_read_buf(self.state.mut_read_buf()) {
 			Ok(Some(0)) => {
 				// socket seems to be closed, so just update state
@@ -112,7 +115,7 @@ impl Connection {
 		}
 	}
 
-	fn write(&mut self, event_loop: &mut mio::EventLoop<Server>) {
+	fn write(&mut self, event_loop: &mut mio::EventLoop<ChatServer>) {
 		match self.socket.try_write_buf(self.state.mut_write_buf()) {
 			Ok(Some(_)) => {
 				// if the entire buffer has been written, transition to the reading state
@@ -133,7 +136,7 @@ impl Connection {
 		}
 	}
 
-	fn reregister(&self, event_loop: &mut mio::EventLoop<Server>) {
+	fn reregister(&self, event_loop: &mut mio::EventLoop<ChatServer>) {
 		// change the type of event notifications we want according to connection state
 		let event_set = match self.state {
 			State::Reading(..) => mio::EventSet::readable(),
