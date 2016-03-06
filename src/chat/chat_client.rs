@@ -16,7 +16,7 @@ use std::{mem, str};
 use std::io::Cursor;
 use std::net::SocketAddr;
 
-// server client. Can manage multiple connections.
+// server client.
 pub struct ChatClient {
 	connections: Slab<Connection>,
 }
@@ -50,7 +50,10 @@ impl ChatClient {
 }
 
 impl mio::Handler for ChatClient {
-	fn ready(&mut self, event_loop: &mut mio::EventLoop<ChatServer>, token: mio::Token, events: mio::EventSet) {
+    type Timeout = ();
+    type Message = ();
+
+	fn ready(&mut self, event_loop: &mut mio::EventLoop<ChatClient>, token: mio::Token, events: mio::EventSet) {
 		println!("Socket is ready! Token = {:?}; Events = {:?}", token, events);
 		self.connections[token].ready(event_loop, events);
 
@@ -68,7 +71,7 @@ impl mio::Handler for ChatClient {
 
 // Connection methods
 impl Connection {
-	fn ready(&mut self, event_loop: &mut mio::EventLoop<ChatServer>, events: mio::EventSet) {
+	fn ready(&mut self, event_loop: &mut mio::EventLoop<ChatClient>, events: mio::EventSet) {
 		println!("Connection state = {:?}", self.state);
 
 		// handle event according to the current state of the connection
@@ -87,7 +90,7 @@ impl Connection {
 		}
 	}
 
-	fn read(&mut self, event_loop: &mut mio::EventLoop<ChatServer>) {
+	fn read(&mut self, event_loop: &mut mio::EventLoop<ChatClient>) {
 		match self.socket.try_read_buf(self.state.mut_read_buf()) {
 			Ok(Some(0)) => {
 				// socket seems to be closed, so just update state
@@ -115,7 +118,7 @@ impl Connection {
 		}
 	}
 
-	fn write(&mut self, event_loop: &mut mio::EventLoop<ChatServer>) {
+	fn write(&mut self, event_loop: &mut mio::EventLoop<ChatClient>) {
 		match self.socket.try_write_buf(self.state.mut_write_buf()) {
 			Ok(Some(_)) => {
 				// if the entire buffer has been written, transition to the reading state
@@ -136,7 +139,7 @@ impl Connection {
 		}
 	}
 
-	fn reregister(&self, event_loop: &mut mio::EventLoop<ChatServer>) {
+	fn reregister(&self, event_loop: &mut mio::EventLoop<ChatClient>) {
 		// change the type of event notifications we want according to connection state
 		let event_set = match self.state {
 			State::Reading(..) => mio::EventSet::readable(),
@@ -260,6 +263,8 @@ fn run(address: SocketAddr) {
 			remaining: vec![],
 		}
 	});
+
+    event_loop.run(&mut chat_client).unwrap();
 }
 
 pub fn main() {
