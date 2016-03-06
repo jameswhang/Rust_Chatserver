@@ -28,14 +28,13 @@ pub struct ChatServer {
 
 impl ChatServer {
     // Initializing a server from a provided TCP socket
-	pub fn new(server: TcpListener) -> ChatServer {
+	pub fn new(sock: TcpListener) -> ChatServer {
 		ChatServer {
-            sock: server,
+            sock: sock,
             token: Token(1),
 			connections: Slab::new_starting_at(mio::Token(2), 128),
 		}
 	}
-
 
     /// Register the server with event loop
     pub fn register(&mut self, event_loop: &mut EventLoop<ChatServer>) -> io::Result<()> {

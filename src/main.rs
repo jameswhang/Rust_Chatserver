@@ -8,17 +8,19 @@ use chitchat::chat::chat_client::{ChatClient};
 use std::env;
 use std::net::{SocketAddr};
 
+use self::mio::EventLoop;
+use self::mio::tcp::*;
+
 fn main(){
     let mut args: Vec<_> = env::args().collect();
 	if args.len() < 3 {
 		panic!("usage: cargo run [mode] [server_ip]:[server_port]");
 	}
 
-
 	let mode = args[1].clone();
 
 	if mode == "s" {
-		unimplemented!();
+        start_server(args[2].clone());
 	} else if mode == "u" {
         let server_address = args[2].clone();
         let server: SocketAddr = server_address.parse().unwrap();
@@ -35,14 +37,19 @@ fn main(){
 }
 
 fn start_client(server_address : SocketAddr) {
-    unimplemented!();
-//	let client = ChatClient::new(server_address);
+	let client = ChatClient::new(server_address);
 //	client.start();
 }
 
 
-fn start_server(server_port : String) {
-    unimplemented!();
-//	let server = ChatServer::new(server_port);
-//	server.start();
+fn start_server(server_addr : String) {
+    let addr = server_addr.parse::<SocketAddr>().ok().expect("Failed to parse host:port");
+    let sock = TcpListener::bind(&addr).ok().expect("Failed to bind the address");
+    let mut event_loop = EventLoop::new().ok().expect("Failed to create the event loop");
+    let mut server = ChatServer::new(sock);
+    server.register(&mut event_loop).ok().expect("Failed to register the server with event loop");
+    event_loop.run(&mut server).unwrap_or_else(|e| {
+        println!("Event loop failed {:?}", e);
+    });
+
 }
