@@ -22,7 +22,7 @@ pub enum ChatterStatus {
 	InRoom,
 }
 
-
+/// Struct used to pass messages. Wraps interaction with TcpStream
 #[derive(Debug)]
 pub struct Chatter {
 	username: Id,
@@ -31,6 +31,11 @@ pub struct Chatter {
 }
 
 impl Chatter {
+    /// Assumes that a connection already exists and is given a copy by move
+    ///
+    /// @param username : String
+    /// @param connection : TcpStream
+    /// @return Chatter
 	pub fn new(username : String, connection : TcpStream) -> Chatter {
 		Chatter {
 			username : username as Id,
@@ -39,6 +44,10 @@ impl Chatter {
 		}
 	}
 
+    /// Helper function to send messages to connection
+    ///
+    /// @param message_type : MessageType
+    /// @param message : &String
 	pub fn send_message(&mut self, message_type : MessageType, message : &String) ->
         Result<ActionStatus, ActionStatus> {
 		unimplemented!();
@@ -81,4 +90,11 @@ impl Chatter {
 			_ => Err(Invalid),
 		}
 	}
+}
+
+
+
+#[cfg(test)]
+mod chatter_tests {
+
 }

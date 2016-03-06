@@ -7,8 +7,8 @@ use super::message::{MessageType, Message};
 use std::io::{self, Read};
 use std::collections::HashMap;
 use std::net::{TcpStream, SocketAddr};
+use super::types::Id;
 
-pub type Id = String;
 
 #[derive(Debug, PartialEq)]
 pub enum ClientStatus {
