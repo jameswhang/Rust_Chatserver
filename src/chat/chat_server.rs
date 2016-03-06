@@ -16,9 +16,7 @@ use self::mio::tcp::*;
 use self::mio::util::Slab;
 
 use self::bytes::{Buf, Take};
-
 use super::chat_connection::Connection;
-
 
 pub struct ChatServer {
     sock: TcpListener,
@@ -58,7 +56,7 @@ impl ChatServer {
                     match s {
                         Some((sock, _)) => sock,
                         None => {
-                            println!("accept encounted WoudlBlock");
+                            println!("accept encounted WouldBlock");
                             return;
                         }
                     }

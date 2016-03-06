@@ -38,7 +38,8 @@ fn main(){
 
 fn start_client(server_address : SocketAddr) {
 	let client = ChatClient::new(server_address);
-//	client.start();
+    while(true) {
+    }
 }
 
 
@@ -47,6 +48,7 @@ fn start_server(server_addr : String) {
     let sock = TcpListener::bind(&addr).ok().expect("Failed to bind the address");
     let mut event_loop = EventLoop::new().ok().expect("Failed to create the event loop");
     let mut server = ChatServer::new(sock);
+
     server.register(&mut event_loop).ok().expect("Failed to register the server with event loop");
     event_loop.run(&mut server).unwrap_or_else(|e| {
         println!("Event loop failed {:?}", e);

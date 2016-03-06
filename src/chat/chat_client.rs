@@ -5,16 +5,10 @@ extern crate bytes;
 
 "]
 
-use super::chatter::{Chatter};
 use super::message::{MessageType, Message};
-use std::io::{self, Read};
-use std::collections::HashMap;
-use super::types::Id;
 
-use self::mio::{TryRead, TryWrite};
-use self::mio::tcp::TcpStream;
-use self::mio::util::Slab;
-use self::bytes::Buf;
+use std::io::prelude::*;
+use std::net::TcpStream;
 
 use super::chat_server::ChatServer;
 
@@ -34,19 +28,27 @@ pub enum ClientStatus {
 
 // server client.
 pub struct ChatClient {
-    server: SocketAddr,
-    //TODO: put in the game client here
+    stream: TcpStream,
 }
 
 impl ChatClient {
-    pub fn new(server: SocketAddr) -> ChatClient {
+    pub fn new(server_addr: SocketAddr) -> ChatClient {
         ChatClient {
-            server: server,
+            stream: TcpStream::connect(&server_addr).unwrap()
         }
     }
 
-    pub fn start() {
-        unimplemented!();
+    fn show_all_rooms(&mut self) {
+        self.send_msg(format!("SHOWROOMS"));
+        let mut buf = [0u8; 8];
+        self.stream.read(&mut buf).unwrap();
+    }
+
+    pub fn send_msg(&mut self, msg: String) {
+        let mut buf = [0u8; 8]; // Some complications exist with the interaction between
+                                // mio/kqueue. Refer to chat_server for more explanation
+        self.stream.write_all(buf.as_ref()).unwrap();
+        self.stream.write_all(msg.as_ref()).unwrap();
     }
 
     fn select_game() {
