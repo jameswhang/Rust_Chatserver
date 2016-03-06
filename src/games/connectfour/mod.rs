@@ -1,11 +1,12 @@
 pub mod connectfourboard;
-
+// pub mod onlineconnectfour;
 
 use std::ops::Index;
 use std::collections::HashMap;
 use std::fmt;
 
 use super::{Game, TurnBasedGame, Player, GameState, GResult, GResultChat, MultiIndex, Id};
+use super::PlayerType::*;
 use self::connectfourboard::*;
 
 pub const NUM_ROWS : usize = 6;
@@ -23,7 +24,7 @@ impl ConnectFour {
     pub fn new(id1 : String, id2 : String) -> ConnectFour {
         ConnectFour{
             board: ConnectFourBoard::new(),
-            players: vec![Player::Human(id1), Player::Human(id2)],
+            players: vec![Player::new(Human, id1), Player::new(Human, id2)],
             turn : 0,
         }
     }
