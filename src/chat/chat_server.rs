@@ -24,6 +24,7 @@ pub struct ChatServer {
     sock: TcpListener,
     token: Token,
 	connections: Slab<Connection>,  // maintains a map of all rooms
+    chatrooms: RoomMap,
 }
 
 impl ChatServer {
@@ -33,6 +34,7 @@ impl ChatServer {
             sock: sock,
             token: Token(1),
 			connections: Slab::new_starting_at(mio::Token(2), 128),
+            chatrooms: RoomMap::new(),
 		}
 	}
 
@@ -52,7 +54,7 @@ impl ChatServer {
     pub fn accept(&mut self, event_loop: &mut EventLoop<ChatServer>) {
         println!("Server accepting a new socket!");
         loop {
-            // Log an error if there is no socket, but otherwise move on 
+            // Log an error if there is no socket, but otherwise move on
             let sock = match self.sock.accept() {
                 Ok(s) => {
                     match s {
@@ -114,14 +116,26 @@ impl ChatServer {
         &mut self.connections[token]
     }
 
+    pub fn add_connectfour_client(&mut self, chatroom_name: String, client: &ConnectFourClient) ->
+        Result<ActionStatus, ActionStatus> {
+        if self.chatrooms.contains_key(chatroom_name) {
+            let room = self.chatrooms.entry(chatroom_name);
+            if let Ok(_) = *room.join(client) {
+                Ok(ActionStatus::OK)
+            } else {
+                Err(ActionStatus::Error)
+            }
+        } else {
+            Err(ActionStatus::Invalid)
+        }
+    }
 
+    pub fn add_chatroom(&mut self, chatroom_name: String, chatroom: &ChatRoom) {
+        self.chatrooms.insert(chatroom_name, chatroom);
+    }
 
-
-
-	pub fn add_chatter(){ unimplemented!();}
-	pub fn add_room(){ unimplemented!();}
-	pub fn remove_room(){ unimplemented!();}
-	pub fn remove_chatter(){ unimplemented!();}
+	// pub fn remove_room(){ unimplemented!();}
+	// pub fn remove_chatter(){ unimplemented!();}
 }
 
 impl mio::Handler for ChatServer {

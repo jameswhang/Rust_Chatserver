@@ -7,8 +7,8 @@ use self::chrono::*;
 
 
 pub type Id = String;
-pub type UserMap = HashMap<Id, Chatter>;
-pub type RoomMap = HashMap<Id, ChatRoom>;
+pub type ClientMap = HashMap<Id, &ConnectFourClient>;
+pub type RoomMap = HashMap<String, ChatRoom>;
 pub type Time = DateTime<UTC>;
 
 
