@@ -21,7 +21,15 @@ pub struct ConnectFour {
 }
 
 impl ConnectFour {
-    pub fn new(id1 : String, id2 : String) -> ConnectFour {
+    pub fn new() -> ConnectFour {
+        ConnectFour{
+            board: ConnectFourBoard::new(),
+            players: vec![],
+            turn : 0,
+        }
+    }
+
+    pub fn new_with_players(id1 : String, id2 : String) -> ConnectFour {
         ConnectFour{
             board: ConnectFourBoard::new(),
             players: vec![Player::new(Human, id1), Player::new(Human, id2)],
@@ -30,6 +38,10 @@ impl ConnectFour {
     }
 
     pub fn make_move(&mut self, col : usize) -> GResult<&str> {
+        if !self.is_full() {
+            return Err("Not enough players");
+        }
+
         let result = self.board.add_to_column(col, self.players[self.turn].clone());
 
         match result {
@@ -47,6 +59,15 @@ impl ConnectFour {
             Err(s) => Err(s),
         }
     }
+
+    pub fn add_player(&mut self, id : String) -> GResult<&str> {
+        if !self.is_full() {
+            self.players.push(Player::new(Human, id));
+            Ok(GameState::Ongoing)
+        } else {
+            Err("Game is full")
+        }
+    }
 }
 
 
@@ -59,6 +80,16 @@ impl Game for ConnectFour{
         }
 
         GameState::Ongoing
+    }
+
+
+    fn is_playing(&self, player_id : Id) -> bool {
+        self.players.iter().filter(|x| *x.id() == player_id).size_hint().1.unwrap() > 0
+    }
+
+
+    fn is_full(&self) -> bool {
+        self.players.len() == 2
     }
 
 
@@ -95,6 +126,7 @@ impl Game for ConnectFour{
     fn get_players(&self) -> &[Player] {
         &self.players
     }
+
 }
 
 impl TurnBasedGame for ConnectFour {
@@ -106,58 +138,5 @@ impl TurnBasedGame for ConnectFour {
 impl fmt::Display for ConnectFour {
     fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.board)
-    }
-}
-
-
-#[cfg(test)]
-mod connectfour_tests {
-    use super::*;
-    use super::super::*;
-
-    #[test]
-    fn win_vertical() {
-        let mut cg = get_test_board();
-
-        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Finished);
-    }
-
-    #[test]
-    fn win_vertical1() {
-        let mut cg = get_test_board();
-
-        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Finished);
-    }
-
-    #[test]
-    fn win_vertical2() {
-        let mut cg = get_test_board();
-        cg.make_move(2);
-        assert_eq!(cg.make_move(1).expect("impossible"), GameState::Finished);
-    }
-
-    #[test]
-    fn win_horizontal() {
-        let mut cg = ConnectFour::new("player1".to_string(), "player2".to_string());
-        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Ongoing);
-        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Ongoing);
-        assert_eq!(cg.make_move(1).expect("impossible"), GameState::Ongoing);
-        assert_eq!(cg.make_move(1).expect("impossible"), GameState::Ongoing);
-        assert_eq!(cg.make_move(2).expect("impossible"), GameState::Ongoing);
-        assert_eq!(cg.make_move(2).expect("impossible"), GameState::Ongoing);
-
-        assert_eq!(cg.make_move(3).expect("impossible"), GameState::Finished);
-    }
-
-    fn get_test_board() -> ConnectFour {
-        let mut cg = ConnectFour::new("player1".to_string(), "player2".to_string());
-
-        cg.make_move(0);
-        cg.make_move(1);
-        cg.make_move(0);
-        cg.make_move(1);
-        cg.make_move(0);
-        cg.make_move(1);
-        cg
     }
 }

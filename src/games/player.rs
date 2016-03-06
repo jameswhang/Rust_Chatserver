@@ -21,6 +21,14 @@ impl Player {
             id : id,
         }
     }
+
+    pub fn id(&self) -> &String {
+        &self.id
+    }
+
+    pub fn p_type(&self) -> PlayerType {
+        self.p_type.clone()
+    }
 }
 
 impl fmt::Display for Player {

@@ -1,6 +1,7 @@
 use super::super::chat::message::Message;
 use super::Player;
 
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum GameState {
     Ongoing,
@@ -9,13 +10,18 @@ pub enum GameState {
 
 pub trait Game {
     /// Returns whether the game has finished
+    /// @return GameState
     fn is_done(&self) -> GameState;
+    fn is_playing(&self, player_id : Id) -> bool;
+    fn is_full(&self) -> bool;
+
+    fn get_players(&self) -> &[Player];
     /// returns the winner of the game if there is one
     fn get_winner(&self) -> Option<Player>;
     /// Get ranking of player in game
     fn get_position(&self, player: Player) -> Option<usize>;
+
     fn reset(&mut self);
-    fn get_players(&self) -> &[Player];
 }
 
 pub trait OnlineGame  : Game {
