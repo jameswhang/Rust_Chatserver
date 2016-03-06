@@ -1,4 +1,7 @@
 extern crate chitchat;
+extern crate mio;
+
+mod chat;
 
 use chitchat::chat::chat_server::{ChatServer};
 use chitchat::chat::chat_client::{ChatClient};
