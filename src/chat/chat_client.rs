@@ -34,14 +34,16 @@ pub enum ClientStatus {
 
 // server client.
 pub struct ChatClient {
+	pub id: Id,
     server: SocketAddr,
 
     //TODO: put in the game client here
 }
 
 impl ChatClient {
-    pub fn new(server: SocketAddr) -> ChatClient {
+    pub fn new(server: SocketAddr, id: Id) -> ChatClient {
         ChatClient {
+			id: id,
             server: server,
         }
     }

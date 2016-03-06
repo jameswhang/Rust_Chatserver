@@ -10,6 +10,7 @@ use std::net::SocketAddr;
 use super::types::*;
 use super::chatter::{Chatter};
 use super::chat_room::*;
+use super::chat_client::{ChatClient};
 
 use self::mio::*;
 use self::mio::tcp::*;
@@ -20,16 +21,16 @@ use self::bytes::{Buf, Take};
 use super::chat_connection::Connection;
 
 
-pub struct ChatServer {
+pub struct ChatServer<'b> {
     sock: TcpListener,
     token: Token,
 	connections: Slab<Connection>,  // maintains a map of all rooms
-    chatrooms: RoomMap,
+    chatrooms: RoomMap<'b>,
 }
 
-impl ChatServer {
+impl<'b> ChatServer<'b> {
     // Initializing a server from a provided TCP socket
-	pub fn new(sock: TcpListener) -> ChatServer {
+	pub fn new(sock: TcpListener) -> ChatServer<'b> {
 		ChatServer {
             sock: sock,
             token: Token(1),
@@ -116,44 +117,44 @@ impl ChatServer {
         &mut self.connections[token]
     }
 
-    pub fn add_connectfour_client(&mut self, chatroom_name: String, client: &ConnectFourClient) ->
+    pub fn add_connectfour_client(&mut self, chatroom_name: String, client: &'b ChatClient) ->
         Result<ActionStatus, ActionStatus> {
-        if self.chatrooms.contains_key(chatroom_name) {
-            let room = self.chatrooms.entry(chatroom_name);
-            if let Ok(_) = *room.join(client) {
-                Ok(ActionStatus::OK)
+        if self.chatrooms.contains_key(&chatroom_name) {
+            if let Some(room) = self.chatrooms.get_mut(&chatroom_name) {
+                if let Ok(_) = room.join(client) {
+                    Ok(ActionStatus::OK)
+                } else {
+                    Err(ActionStatus::Failed)
+                }
             } else {
-                Err(ActionStatus::Error)
+                Err(ActionStatus::Failed)
             }
         } else {
             Err(ActionStatus::Invalid)
         }
     }
 
-    pub fn add_chatroom(&mut self, chatroom_name: String, chatroom: &ChatRoom) {
-        self.chatrooms.insert(chatroom_name, chatroom);
+    pub fn add_chatroom(&mut self, chatroom_name: String, chatroom: &'b &ChatRoom<'b>) {
+        self.chatrooms.insert(chatroom_name, &chatroom);
     }
 
     pub fn remove_connectfour_client(&mut self, chatroom_name: String, client_id: Id) ->
     Result<ActionStatus, ActionStatus> {
-        if self.chatrooms.contains_key(chatroom_name) {
-            let room = self.chatrooms.entry(chatroom_name);
-            if let Ok(_) = *room.remove(client_id) {
-                Ok(ActionStatus::OK)
-            } else {
-                Err(ActionStatus::Error)
-            }
+        if self.chatrooms.contains_key(&chatroom_name) {
+            let room = self.chatrooms.get_mut(&chatroom_name).unwrap();
+            room.remove(&client_id);
+            Ok(ActionStatus::OK)
         } else {
             Err(ActionStatus::Invalid)
         }
     }
 
     pub fn remove_room(&mut self, chatroom_name: String) {
-        self.chatrooms.remove(chatroom_name);
+        self.chatrooms.remove(&chatroom_name);
     }
 }
 
-impl mio::Handler for ChatServer {
+impl<'b> mio::Handler for ChatServer<'b> {
     type Timeout = (); // timeouts
     type Message = (); // cross thread notifications
 
