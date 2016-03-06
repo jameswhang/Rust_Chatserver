@@ -21,7 +21,7 @@ fn main(){
 
 	if mode == "s" {
         start_server(args[2].clone());
-	} else if mode == "u" {
+	} else if mode == "c" {
         let server_address = args[2].clone();
         let server: SocketAddr = server_address.parse().unwrap();
         start_client(server);

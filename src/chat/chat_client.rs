@@ -35,7 +35,6 @@ pub enum ClientStatus {
 // server client.
 pub struct ChatClient {
     server: SocketAddr,
-
     //TODO: put in the game client here
 }
 

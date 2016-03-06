@@ -3,12 +3,6 @@ name = "chitchat"
 version = "0.1.0"
 authors = ["adellahlou <alahlou@u.northwestern.edu", "jameswhang <sungyoonwhang2017@u.northwestern.edu>", "nevilgeorge <nevilgeorge2016@u.northwestern.edu>"]
 
-[[bin]]
-name = "server"
-
-[[bin]]
-name = "client"
-
 [dependencies]
 mio = "0.5"
 chrono ="*"

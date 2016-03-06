@@ -23,7 +23,7 @@ use super::chat_connection::Connection;
 pub struct ChatServer {
     sock: TcpListener,
     token: Token,
-	connections: Slab<Connection>,  // maintains a map of all rooms
+	connections: Slab<Connection>,  // maintains a map of all connections
 }
 
 impl ChatServer {
