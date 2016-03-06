@@ -1,74 +1,43 @@
+pub mod connectfourboard;
+
+
 use std::ops::Index;
-use super::{Game, TurnBasedGame, Player, GameState, GResult};
+use std::collections::HashMap;
+use std::fmt;
 
-#![allow(dead_code)]
+use super::{Game, TurnBasedGame, Player, GameState, GResult, GResultChat, MultiIndex, Id};
+use self::connectfourboard::*;
 
-const NUM_ROWS : usize = 6;
-const NUM_COLS : usize = 7;
+pub const NUM_ROWS : usize = 6;
+pub const NUM_COLS : usize = 7;
 
-#[derive(Clone, Debug, PartialEq)]
-struct ConnectFourBoard {
-    //a 6 by seven board
-    spots : [[Option<Player>; NUM_COLS] ; NUM_ROWS],
-    //keeps track of what is free on the board
-    free_spots : [usize ; NUM_COLS],
-}
-
-impl ConnectFourBoard {
-    fn new() -> ConnectFourBoard {
-        ConnectFourBoard {
-            spots : [[None ; NUM_COLS] ; NUM_ROWS],
-            free_spots : [0; NUM_COLS]
-        }
-    }
-
-    fn add_to_column(&mut self, col : usize, player : Player) -> Result<(), &str> {
-        if col < NUM_COLS {
-            let free_spot = self.free_spots[col];
-
-            if free_spot < NUM_ROWS {
-                self.board[(free_spot, col)] = Some(player);
-                Ok()
-            } else {
-                Err("No space in column")
-            }
-        }
-    }
-}
-
-impl Index<(usize, usize)> for ConnectFourBoard {
-    type Output = Option<Player>;
-
-    fn index<'a>(&'a self, index: (usize, usize)) -> &'a Option<Player> {
-        &self.sports[index.0][index.1]
-    }
-}
-
-
-
-#[derive(PartialEq, Hash, Clone, Debug)]
+/// Struct to play the game - ConnectFour
+#[derive(PartialEq, Clone, Debug)]
 pub struct ConnectFour {
-    board: FourSquareBoard,
-    players : [Player ; 2], // two-player game
+    board: ConnectFourBoard,
+    players : Vec<Player>, // two-player game
     turn : usize,
 }
 
 impl ConnectFour {
-    pub fn new() -> FourSquareBoard {
-        FourSquare{
-            board: FourSquareBoard::new(),
-            players: [Player::Human(0), Player::Human(1)],
+    pub fn new(id1 : String, id2 : String) -> ConnectFour {
+        ConnectFour{
+            board: ConnectFourBoard::new(),
+            players: vec![Player::Human(id1), Player::Human(id2)],
             turn : 0,
         }
     }
 
-    pub fn make_move(&mut self, col : usize) GResult<&str> {
-        match self.board.add_to_column(col, self.players[self.turn]) {
-            Ok() => {
-                if self.is_done() {
+    pub fn make_move(&mut self, col : usize) -> GResult<&str> {
+        let result = self.board.add_to_column(col, self.players[self.turn].clone());
+
+        match result {
+            Ok(state) => {
+                if state == GameState::Finished {
+                    // don't switch so we know who won
                     Ok(GameState::Finished)
                 } else {
-                    //switch to other player
+                    // switch to other player by XORing
                     self.turn = self.turn ^ 1;
                     Ok(GameState::Ongoing)
                 }
@@ -81,33 +50,47 @@ impl ConnectFour {
 
 
 impl Game for ConnectFour{
-    pub fn is_done(&self) -> bool {
-        unimplemented!();
+    fn is_done(&self) -> GameState {
+        for player in &self.players {
+            if self.board.check_player(player.clone()) == GameState::Finished {
+                return GameState::Finished;
+            }
+        }
+
+        GameState::Ongoing
     }
 
+
     fn get_winner(&self) -> Option<Player> {
-        if !self.is_done {
-            return None;
-        } else {
+        if self.is_done() == GameState::Finished {
             //last person to make a move must have won
-            Some(self.players[self.turn])
+            Some(self.players[self.turn].clone())
+        }
+        else {
+            return None;
         }
     }
 
-    /// get ranking of player in game
     fn get_position(&self, player : Player) -> Option<usize> {
-        match self.get_winner {
-            Some(pl) if pl = player => Some(1),
-            Some(pl) => Some(2),
+        match self.get_winner() {
+            Some(pl) => {
+                if pl == player {
+                    Some(1)
+                } else {
+                    Some(2)
+                }
+            },
+
             _ => None,
         }
     }
 
     fn reset(&mut self) {
-        self.board = FourSquareBoard::new(),
+        self.board = ConnectFourBoard::new();
         self.turn = 0;
     }
 
+    /// @return &[Player]
     fn get_players(&self) -> &[Player] {
         &self.players
     }
@@ -115,6 +98,65 @@ impl Game for ConnectFour{
 
 impl TurnBasedGame for ConnectFour {
     fn whos_turn(&self) -> Player {
-        self.players[self.turn]
+        self.players[self.turn].clone()
+    }
+}
+
+impl fmt::Display for ConnectFour {
+    fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.board)
+    }
+}
+
+
+#[cfg(test)]
+mod connectfour_tests {
+    use super::*;
+    use super::super::*;
+
+    #[test]
+    fn win_vertical() {
+        let mut cg = get_test_board();
+
+        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Finished);
+    }
+
+    #[test]
+    fn win_vertical1() {
+        let mut cg = get_test_board();
+
+        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Finished);
+    }
+
+    #[test]
+    fn win_vertical2() {
+        let mut cg = get_test_board();
+        cg.make_move(2);
+        assert_eq!(cg.make_move(1).expect("impossible"), GameState::Finished);
+    }
+
+    #[test]
+    fn win_horizontal() {
+        let mut cg = ConnectFour::new("player1".to_string(), "player2".to_string());
+        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Ongoing);
+        assert_eq!(cg.make_move(0).expect("impossible"), GameState::Ongoing);
+        assert_eq!(cg.make_move(1).expect("impossible"), GameState::Ongoing);
+        assert_eq!(cg.make_move(1).expect("impossible"), GameState::Ongoing);
+        assert_eq!(cg.make_move(2).expect("impossible"), GameState::Ongoing);
+        assert_eq!(cg.make_move(2).expect("impossible"), GameState::Ongoing);
+
+        assert_eq!(cg.make_move(3).expect("impossible"), GameState::Finished);
+    }
+
+    fn get_test_board() -> ConnectFour {
+        let mut cg = ConnectFour::new("player1".to_string(), "player2".to_string());
+
+        cg.make_move(0);
+        cg.make_move(1);
+        cg.make_move(0);
+        cg.make_move(1);
+        cg.make_move(0);
+        cg.make_move(1);
+        cg
     }
 }
