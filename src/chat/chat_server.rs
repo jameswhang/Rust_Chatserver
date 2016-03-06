@@ -134,8 +134,23 @@ impl ChatServer {
         self.chatrooms.insert(chatroom_name, chatroom);
     }
 
-	// pub fn remove_room(){ unimplemented!();}
-	// pub fn remove_chatter(){ unimplemented!();}
+    pub fn remove_connectfour_client(&mut self, chatroom_name: String, client_id: Id) ->
+    Result<ActionStatus, ActionStatus> {
+        if self.chatrooms.contains_key(chatroom_name) {
+            let room = self.chatrooms.entry(chatroom_name);
+            if let Ok(_) = *room.remove(client_id) {
+                Ok(ActionStatus::OK)
+            } else {
+                Err(ActionStatus::Error)
+            }
+        } else {
+            Err(ActionStatus::Invalid)
+        }
+    }
+
+    pub fn remove_room(&mut self, chatroom_name: String) {
+        self.chatrooms.remove(chatroom_name);
+    }
 }
 
 impl mio::Handler for ChatServer {

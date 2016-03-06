@@ -23,4 +23,8 @@ impl ChatRoom {
             Ok(ActionStatus::OK)
         }
     }
+
+    pub fn remove(&mut self, client_id: Id) {
+        self.ClientMap.remove(client_id);
+    }
 }
