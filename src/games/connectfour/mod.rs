@@ -2,7 +2,7 @@ pub mod connectfourboard;
 pub use self::connectfourboard::*;
 
 pub mod onlineconnectfour;
-pub use self::onlineconnectfour::*;
+pub use self::onlineconnectfour::{ConnectFourServer};
 // mod test;
 
 use std::ops::Index;
@@ -81,7 +81,7 @@ impl ConnectFour {
         let mut remove_ind = -1;
 
         for ind in 0..plen {
-            if *self.players[plen].id() == *id {
+            if *self.players[ind].id() == *id {
                 remove_ind = ind as i32;
                 break;
             }
