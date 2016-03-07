@@ -88,7 +88,7 @@ impl ConnectFourServer {
             },
 
             Err(s) => {
-                ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again"));
+                ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Player not in game"));
             },
         }
 

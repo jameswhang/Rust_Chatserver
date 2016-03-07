@@ -82,7 +82,7 @@ impl ConnectFourClient {
                 self.state = ClientState::Playing;
             }
 
-            self.game.add_player(message.sender());
+            self.game.add_player(message.content());
         }
     }
 
@@ -102,7 +102,7 @@ impl ConnectFourClient {
         let player_id = message.sender().clone();
 
         if player_id == _SERVER_ID {
-            self.game.remove_player(&player_id);
+            self.game.remove_player(&message.content());
         }
     }
 
@@ -112,5 +112,99 @@ impl ConnectFourClient {
 
     pub fn state(&self) -> ClientState {
         self.state.clone()
+    }
+}
+
+
+#[cfg(test)]
+mod connectfourclient_tests {
+    use super::*;
+    use super::ClientState::*;
+    use super::super::message::*;
+    use super::super::super::*;
+    use super::super::message::ConnectFourMType::*;
+
+    #[test]
+    fn test_joins_game() {
+        let mut game = ConnectFourClient::new(&"tester1".to_string());
+        let expected = ConnectFour::new_with_players(&"tester1".to_string(), &"tester2".to_string());
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester1").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester2").to_string());
+
+        assert_eq!(*game.game(), expected);
+    }
+
+    #[test]
+    fn test_joins_too_many() {
+        let mut game = ConnectFourClient::new(&"tester1".to_string());
+        let expected = ConnectFour::new_with_players(&"tester1".to_string(), &"tester2".to_string());
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester1").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester2").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Update, "tester3 failed to join").to_string());
+
+        assert_eq!(*game.game(), expected);
+    }
+
+
+    #[test]
+    fn test_update_game_once() {
+        let mut game = ConnectFourClient::new(&"tester1".to_string());
+        let mut expected = ConnectFour::new_with_players(&"tester1".to_string(), &"tester2".to_string());
+        expected.make_move(0);
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester1").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester2").to_string());
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Update, "0").to_string());
+
+        assert_eq!(*game.game(), expected);
+    }
+
+    #[test]
+    fn test_update_game_twice() {
+        let mut game = ConnectFourClient::new(&"tester1".to_string());
+        let mut expected = ConnectFour::new_with_players(&"tester1".to_string(), &"tester2".to_string());
+        expected.make_move(0);
+        expected.make_move(3);
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester1").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester2").to_string());
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Update, "0").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Update, "3").to_string());
+
+        assert_eq!(*game.game(), expected);
+    }
+
+    #[test]
+    fn test_update_outofturn_game() {
+        let mut game = ConnectFourClient::new(&"tester1".to_string());
+        let mut expected = ConnectFour::new_with_players(&"tester1".to_string(), &"tester2".to_string());
+        expected.make_move(0);
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester1").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester2").to_string());
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Update, "0").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("tester1".to_string(), Update, "0").to_string());
+
+        assert_eq!(*game.game(), expected);
+    }
+
+
+    #[test]
+    fn test_exit() {
+        let mut game = ConnectFourClient::new(&"tester1".to_string());
+        let mut expected = ConnectFour::new_with_players(&"tester1".to_string(), &"tester2".to_string());
+        expected.remove_player(&"tester1".to_string());
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester1").to_string());
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Join, "tester2").to_string());
+
+        game.handle_message(&ConnectFourMessagePayload::new_from_str("SERVER".to_string(), Exit, "tester1").to_string());
+
+        assert_eq!(*game.game(), expected);
     }
 }
