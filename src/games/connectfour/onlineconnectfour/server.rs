@@ -84,7 +84,7 @@ impl ConnectFourServer {
 
         match self.game.remove_player(&player_id) {
             Ok(state) => {
-                ret.push(ConnectFourMessagePayload::new(&player_id, Exit, format!("{} has left the game", player_id)));
+                ret.push(ConnectFourMessagePayload::new(&_SERVER_ID, Exit, player_id));
             },
 
             Err(s) => {
