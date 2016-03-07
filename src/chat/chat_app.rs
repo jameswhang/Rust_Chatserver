@@ -18,7 +18,7 @@ use std::collections::hash_map::Entry::{self, Occupied, Vacant};
 use std::io::{Write};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-struct ChatApp<T> {
+pub struct ChatApp<T> {
     conn_to_id : HashMap<Token, Id>,
     id_to_conn : HashMap<Id, Token>,
     id_to_room : HashMap<Id, ChatRoom>,
@@ -71,7 +71,8 @@ impl<T : Write> ChatApp<T> {
 
                 let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                             "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "".to_string());
-                self.handle_to_mio_to_write_with.write(mconfirm.into_bytes().as_slice());
+                
+               // self.handle_to_mio_to_write_with.write_to_client_stream(mconfirm.into_bytes().as_slice());
             }
 
             //old connection wants new name
