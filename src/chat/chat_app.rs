@@ -18,23 +18,21 @@ use std::collections::hash_map::Entry::{self, Occupied, Vacant};
 use std::io::{Write};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct ChatApp<T> {
+pub struct ChatApp {
     conn_to_id : HashMap<Token, Id>,
     id_to_conn : HashMap<Id, Token>,
     id_to_room : HashMap<Id, ChatRoom>,
     userid_to_room : HashMap<Id, Id>,
-    handle_to_mio_to_write_with : T,
 }
 
 
-impl<T : Write> ChatApp<T> {
-    pub fn new(handle : T) -> ChatApp<T>  {
+impl ChatApp {
+    pub fn new() -> ChatApp {
         ChatApp {
             conn_to_id : HashMap::new(),
             id_to_conn : HashMap::new(),
             id_to_room : HashMap::new(),
             userid_to_room : HashMap::new(),
-            handle_to_mio_to_write_with : handle
         }
     }
 
@@ -72,7 +70,7 @@ impl<T : Write> ChatApp<T> {
                 let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                             "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "".to_string());
                 
-               // self.handle_to_mio_to_write_with.write_to_client_stream(mconfirm.into_bytes().as_slice());
+                // TODO: Return something
             }
 
             //old connection wants new name
@@ -86,7 +84,9 @@ impl<T : Write> ChatApp<T> {
         else {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Requested ID is already taken".to_string());
-            self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
+
+            //self.handle_to_mio_to_write_with.write_to_client_stream(mreject.into_bytes().as_slice());
+            // TODO: Return something
         }
     }
 
@@ -100,7 +100,8 @@ impl<T : Write> ChatApp<T> {
                 Occupied(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Please leave your room first".to_string());
-                    self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
+//                    self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
+//                    // TODO: Return something
                 },
 
                 //user is free to join any room they wnat
@@ -110,11 +111,13 @@ impl<T : Write> ChatApp<T> {
                         good_entry.insert(cm.message().clone());
                         let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                                     "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome to: {}", cm.message()));
-                        self.handle_to_mio_to_write_with.write(mconfirm.into_bytes().as_slice());
+                        //self.handle_to_mio_to_write_with.write(mconfirm.into_bytes().as_slice());
+                        // TODO: Return something
                     } else {
                         let mreject = Message::new(cm.id().clone(), UTC::now(),
                                     "SERVER".to_string(), cm.sender().clone(), Reject(mid), "No room with that name found".to_string());
-                        self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
+                        //self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
+                        //TODO: Return something
                     }
                 }
             }
@@ -131,7 +134,8 @@ impl<T : Write> ChatApp<T> {
                 Vacant(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
                         cm.sender().clone(), Reject(mid), "You are not currently in a room".to_string());
-                    self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
+//                    self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
+//                    // TODO: Return something
                 },
 
                 //user is in a room, make it blank
@@ -139,7 +143,8 @@ impl<T : Write> ChatApp<T> {
                     good_entry.remove();
                     let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "You've left the room.".to_string());
-                    self.handle_to_mio_to_write_with.write(mconfirm.into_bytes().as_slice());
+                    //self.handle_to_mio_to_write_with.write(mconfirm.into_bytes().as_slice());
+                    // TODO: Return something
                 }
             }
         }
