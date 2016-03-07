@@ -3,6 +3,7 @@ extern crate bytes;
 
 use std::rc::Rc;
 use std::io;
+use std::str;
 use std::mem;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -96,6 +97,16 @@ impl ChatServer {
     fn readable(&mut self, token: Token) -> io::Result<()> {
         println!("server conn readable; token={:?}", token);
         while let Some(msg) = try!(self.find_connection_by_token(token).readable()) {
+            /*
+            let client_msg = msg.clone();
+            let client_msg_str = str::from_utf8(&client_msg).unwrap();
+
+            let response = ChatServer::handle_actions(client_msg_str).clone();
+            let resp = response.clone();
+            let response_bytes = response.as_bytes().to_owned();
+
+            let rc_message = Rc::new(response_bytes);
+            */
             let rc_message = Rc::new(msg);
             for c in self.connections.iter_mut() {
                 c.send_message(rc_message.clone())
@@ -108,13 +119,29 @@ impl ChatServer {
         Ok(())
     }
 
+    fn handle_actions(request_str: &str) -> &str {
+        match request_str {
+            "SHOWROOMS" => {
+                "testshow"
+            }
+
+            "JOINROOM" => {
+                "testjoin"
+            }
+
+            "CREATEROOM" => {
+                "testcreate"
+            }
+
+            _ => {
+                "nothing"
+            }
+        }
+    }
+
     fn find_connection_by_token<'a>(&'a mut self, token: Token) -> &'a mut Connection {
         &mut self.connections[token]
     }
-
-
-
-
 
 	pub fn add_chatter(){ unimplemented!();}
 	pub fn add_room(){ unimplemented!();}
