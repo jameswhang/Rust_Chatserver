@@ -1,7 +1,7 @@
 use std::fmt;
 use super::message::*;
 use super::message::ConnectFourMType::*;
-use super::super::*;
+use super::super::{ConnectFour};
 
 
 
@@ -107,9 +107,5 @@ impl ConnectFourServer {
         // }
         //
         // ret
-    }
-
-    fn handle_disconnect(&self, player_id : Id) -> Vec<ConnectFourMessagePayload> {
-        unimplemented!();
     }
 }

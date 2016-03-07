@@ -2,6 +2,7 @@ pub mod connectfourboard;
 pub use self::connectfourboard::*;
 
 pub mod onlineconnectfour;
+pub use self::onlineconnectfour::*;
 // mod test;
 
 use std::ops::Index;
