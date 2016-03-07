@@ -1,161 +1,63 @@
 extern crate mio;
-extern crate bytes;
 
-use std::rc::Rc;
 use std::io;
 use std::str;
-use std::mem;
-use std::collections::HashMap;
-use std::net::SocketAddr;
-
-use super::types::*;
-use super::chatter::{Chatter};
-use super::chat_room::*;
+use std::rc::Rc;
 
 use self::mio::*;
 use self::mio::tcp::*;
 use self::mio::util::Slab;
 
-use self::bytes::{Buf, Take};
 use super::chat_connection::Connection;
 
 pub struct ChatServer {
+    // main socket for our server
     sock: TcpListener,
+
+    // token of our server. we keep track of it here instead of doing `const SERVER = Token(0)`.
     token: Token,
-	connections: Slab<Connection>,  // maintains a map of all connections
+
+    // a list of connections _accepted_ by our server
+    conns: Slab<Connection>,
 }
 
-impl ChatServer {
-    // Initializing a server from a provided TCP socket
-	pub fn new(sock: TcpListener) -> ChatServer {
-		ChatServer {
-            sock: sock,
-            token: Token(1),
-			connections: Slab::new_starting_at(mio::Token(2), 128),
-		}
-	}
+impl Handler for ChatServer {
+    type Timeout = ();
+    type Message = ();
 
-    /// Register the server with event loop
-    pub fn register(&mut self, event_loop: &mut EventLoop<ChatServer>) -> io::Result<()> {
-        event_loop.register(
-            &self.sock,
-            self.token,
-            EventSet::readable(),
-            PollOpt::edge()
-        ).or_else(|e| {
-            println!("Failed to register the server {:?}, {:?}", self.token, e);
-            Err(e)
-        })
-    }
+    fn tick(&mut self, event_loop: &mut EventLoop<ChatServer>) {
+        println!("Handling end of tick");
 
-    pub fn accept(&mut self, event_loop: &mut EventLoop<ChatServer>) {
-        println!("Server accepting a new socket!");
-        loop {
-            // Log an error if there is no socket, but otherwise move on 
-            let sock = match self.sock.accept() {
-                Ok(s) => {
-                    match s {
-                        Some((sock, _)) => sock,
-                        None => {
-                            println!("accept encounted WouldBlock");
-                            return;
-                        }
-                    }
-                },
-                Err(e) => {
-                    println!("Failed to accept a new socket, {:?}", e);
-                    return;
-                }
-            };
+        let mut reset_tokens = Vec::new();
 
-            match self.connections.insert_with(|token| {
-                println!("registering {:?} with event loop", token);
-                Connection::new(sock, token)
-            }) {
-                Some(token) => {
-                    // Insert successful. Register the connection.
-                    match self.find_connection_by_token(token).register(event_loop) {
-                        Ok(_) => {},
-                        Err(e) => {
-                            println!("Failed to regsiter {:?} connection with the event loop, {:?}",
-                                   token, e);
-                            self.connections.remove(token);
-                        }
-                    }
-                },
-                None => {
-                    println!("Failed to insert connection into slab");
-                }
-            };
-        }
-    }
-
-    /// Forward a readable event to an established connection.
-    /// Connections are identified by the token provided to us from the event loop
-    /// Once read has been finished, push the receive buffer into the all the existing connections
-    /// so that we can broadcast
-    fn readable(&mut self, token: Token) -> io::Result<()> {
-        println!("server conn readable; token={:?}", token);
-        while let Some(msg) = try!(self.find_connection_by_token(token).readable()) {
-            /*
-            let client_msg = msg.clone();
-            let client_msg_str = str::from_utf8(&client_msg).unwrap();
-
-            let response = ChatServer::handle_actions(client_msg_str).clone();
-            let resp = response.clone();
-            let response_bytes = response.as_bytes().to_owned();
-
-            let rc_message = Rc::new(response_bytes);
-            */
-            let rc_message = Rc::new(msg);
-            for c in self.connections.iter_mut() {
-                c.send_message(rc_message.clone())
+        for c in self.conns.iter_mut() {
+            if c.is_reset() {
+                reset_tokens.push(c.token);
+            } else if c.is_idle() {
+                c.reregister(event_loop)
                     .unwrap_or_else(|e| {
-                        println!("Failed to queue the msg for {:?}: {:?}", c.token, e);
+                        println!("Reregister failed {:?}", e);
                         c.mark_reset();
+                        reset_tokens.push(c.token);
                     });
             }
         }
-        Ok(())
-    }
 
-    fn handle_actions(request_str: &str) -> &str {
-        match request_str {
-            "SHOWROOMS" => {
-                "testshow"
-            }
-
-            "JOINROOM" => {
-                "testjoin"
-            }
-
-            "CREATEROOM" => {
-                "testcreate"
-            }
-
-            _ => {
-                "nothing"
+        for token in reset_tokens {
+            match self.conns.remove(token) {
+                Some(_c) => {
+                    println!("reset connection; token={:?}", token);
+                }
+                None => {
+                    println!("Unable to remove connection for {:?}", token);
+                }
             }
         }
     }
 
-    fn find_connection_by_token<'a>(&'a mut self, token: Token) -> &'a mut Connection {
-        &mut self.connections[token]
-    }
-
-	pub fn add_chatter(){ unimplemented!();}
-	pub fn add_room(){ unimplemented!();}
-	pub fn remove_room(){ unimplemented!();}
-	pub fn remove_chatter(){ unimplemented!();}
-}
-
-impl mio::Handler for ChatServer {
-    type Timeout = (); // timeouts
-    type Message = (); // cross thread notifications
-
-
-    fn ready(&mut self, event_loop: &mut mio::EventLoop<ChatServer>, token: mio::Token, events: mio::EventSet) {
-        println!("Socket is ready: token={:?}; events={:?};", token, events);
+    fn ready(&mut self, event_loop: &mut EventLoop<ChatServer>, token: Token, events: EventSet) {
+        println!("{:?} events = {:?}", token, events);
+        assert!(token != Token(0), "[BUG]: Received event for ChatServer token {:?}", token);
 
         if events.is_error() {
             println!("Error event for {:?}", token);
@@ -169,37 +71,170 @@ impl mio::Handler for ChatServer {
             return;
         }
 
+        // We never expect a write event for our `ChatServer` token . A write event for any other token
+        // should be handed off to that connection.
         if events.is_writable() {
+            println!("Write event for {:?}", token);
+            assert!(self.token != token, "Received writable event for ChatServer");
+
             let conn = self.find_connection_by_token(token);
 
             if conn.is_reset() {
                 println!("{:?} has already been reset", token);
+                return;
             }
 
-            conn.writable().unwrap_or_else(|e| {
-                println!("Write event failed for {:?}, {:?}", token, e);
-                conn.mark_reset();
-            });
+            conn.writable()
+                .unwrap_or_else(|e| {
+                    println!("Write event failed for {:?}, {:?}", token, e);
+                    conn.mark_reset();
+                });
         }
 
-        // read event for server is a new connection establishment
+        // A read event for our `ChatServer` token means we are establishing a new connection. A read
+        // event for any other token should be handed off to that connection.
         if events.is_readable() {
+            println!("Read event for {:?}", token);
             if self.token == token {
                 self.accept(event_loop);
             } else {
+
                 if self.find_connection_by_token(token).is_reset() {
                     println!("{:?} has already been reset", token);
                     return;
                 }
-                self.readable(token).unwrap_or_else(|e| {
-                    println!("Read event failed for {:?}, {:?}", token, e);
-                    self.find_connection_by_token(token).mark_reset();
-                });
+
+                self.readable(token)
+                    .unwrap_or_else(|e| {
+                        println!("Read event failed for {:?}: {:?}", token, e);
+                        self.find_connection_by_token(token).mark_reset();
+                    });
             }
         }
 
         if self.token != token {
             self.find_connection_by_token(token).mark_idle();
         }
+    }
+}
+
+impl ChatServer {
+    pub fn new(sock: TcpListener) -> ChatServer {
+        ChatServer {
+            sock: sock,
+
+            // I don't use Token(0) because kqueue will send stuff to Token(0)
+            // by default causing really strange behavior. This way, if I see
+            // something as Token(0), I know there are kqueue shenanigans
+            // going on.
+            token: Token(1),
+
+            // SERVER is Token(1), so start after that
+            // we can deal with a max of 126 connections
+            conns: Slab::new_starting_at(Token(2), 128),
+        }
+    }
+
+    /// Register ChatServer with the event loop.
+    ///
+    /// This keeps the registration details neatly tucked away inside of our implementation.
+    pub fn register(&mut self, event_loop: &mut EventLoop<ChatServer>) -> io::Result<()> {
+        event_loop.register(
+            &self.sock,
+            self.token,
+            EventSet::readable(),
+            PollOpt::edge()
+        ).or_else(|e| {
+            println!("Failed to register server {:?}, {:?}", self.token, e);
+            Err(e)
+        })
+    }
+    ///
+    /// The server will keep track of the new connection and forward any events from the event loop
+    /// to this connection.
+    fn accept(&mut self, event_loop: &mut EventLoop<ChatServer>) {
+        println!("server accepting new socket");
+
+        loop {
+            // Log an error if there is no socket, but otherwise move on so we do not tear down the
+            // entire server.
+            let sock = match self.sock.accept() {
+                Ok(s) => {
+                    match s {
+                        Some((sock, _)) => sock,
+                        None => {
+                            println!("accept encountered WouldBlock");
+                            return;
+                        }
+                    }
+                },
+                Err(e) => {
+                    println!("Failed to accept new socket, {:?}", e);
+                    return;
+                }
+            };
+
+            match self.conns.insert_with(|token| {
+                println!("registering {:?} with event loop", token);
+                Connection::new(sock, token)
+            }) {
+                Some(token) => {
+                    // If we successfully insert, then register our connection.
+                    match self.find_connection_by_token(token).register(event_loop) {
+                        Ok(_) => {},
+                        Err(e) => {
+                            println!("Failed to register {:?} connection with event loop, {:?}", token, e);
+                            self.conns.remove(token);
+                        }
+                    }
+                },
+                None => {
+                    // If we fail to insert, `conn` will go out of scope and be dropped.
+                    println!("Failed to insert connection into slab");
+                }
+            };
+        }
+    }
+
+    /// Forward a readable event to an established connection.
+    ///
+    /// Connections are identified by the token provided to us from the event loop. Once a read has
+    /// finished, push the receive buffer into the all the existing connections so we can
+    /// broadcast.
+    fn readable(&mut self, token: Token) -> io::Result<()> {
+        println!("server conn readable; token={:?}", token);
+
+        while let Some(message) = try!(self.find_connection_by_token(token).readable()) {
+            let msg = message.clone();
+            let msg_string = str::from_utf8(&msg).unwrap();
+            
+
+            // GET RESPONSE STRING
+            let response = ChatServer::handle_request(msg_string).to_owned();
+
+            let rc_message = Rc::new(response);
+            // Queue up a write for all connected clients.
+            for c in self.conns.iter_mut() {
+                c.send_message(rc_message.clone())
+                    .unwrap_or_else(|e| {
+                        println!("Failed to queue message for {:?}: {:?}", c.token, e);
+                        c.mark_reset();
+                    });
+            }
+        }
+
+        Ok(())
+    }
+
+    fn handle_request(request: &str) -> &[u8] {
+        match request {
+            "SHOWROOM" => b"showtest",
+            _ => b"testtest",
+        }
+    }
+
+    /// Find a connection in the slab using the given token.
+    fn find_connection_by_token<'a>(&'a mut self, token: Token) -> &'a mut Connection {
+        &mut self.conns[token]
     }
 }
