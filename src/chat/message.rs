@@ -1,6 +1,7 @@
 extern crate chrono;
 extern crate mio;
 
+use std::convert::AsRef;
 use super::types::*;
 use self::chrono::*;
 use self::mio::*;
@@ -10,6 +11,7 @@ pub enum MessageType {
     Connect,
     Join,
     Chat,
+    Show,
     Leave,
     Action,
     Confirm(Id),
@@ -40,8 +42,35 @@ impl Message {
         }
     }
 
-    pub fn from_string(s : String) -> Option<Message> {
-        unimplemented!();
+    pub fn from_string(s : String, token: mio::Token) -> Option<Message> {
+        match s.as_ref() {
+            "CONNECT" => {
+                Some(
+                    Message {
+                        message_id: "".to_string(),
+                        date: UTC::now(),
+                        sender: "".to_string(),
+                        receiver: "SERVER".to_string(),
+                        message_type: MessageType::Connect,
+                        payload: format!("{}", token.as_usize()),
+                    })
+            },
+
+            "JOIN" => {
+                Some( Message {
+                    message_id: "".to_string(),
+                    date: UTC::now(),
+                    receiver: "SERVER".to_string(),
+                    message_type: MessageType::Join,
+                    sender: format!("{}", token.as_usize()),
+                    payload: "FIXME".to_string(),
+                })
+            },
+
+            _ => {
+                None
+            }
+        }
     }
 
     pub fn to_string(&self) -> String {
@@ -98,7 +127,7 @@ impl ServerResponse {
     pub fn clients(self) -> Vec<mio::Token> {
         self.clients
     }
-
+    
     pub fn message(self) -> Message {
         self.message
     }

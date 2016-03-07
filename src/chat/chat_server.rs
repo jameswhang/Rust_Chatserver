@@ -209,13 +209,6 @@ impl<'b> ChatServer {
             let msg_string = str::from_utf8(&msg).unwrap();
             let handler_request = msg_string.clone().to_string();
             
-
-            // GET RESPONSE STRING
-            let response = ChatServer::handle_request(msg_string);
-
-            let rc_message = Rc::new(response.to_owned());
-
-
             // get appropriate response from app
             let mut resp = self.app.handle_server_message(token, handler_request);
 
@@ -236,33 +229,6 @@ impl<'b> ChatServer {
                 println!("Failed to queue message for {:?}: {:?}", c.token, e);
                 c.mark_reset();
             });
-    }
-
-    fn handle_request(request: &str) -> &[u8] {
-        match request {
-            "SHOWROOM" => b"showtest",
-            _ => b"testtest",
-        }
-    }
-
-    pub fn add_connectfour_client(&mut self, chatroom_name: String, client: &'b ChatClient) ->
-        Result<ActionStatus, ActionStatus> {
-            /*
-        if self.chatrooms.contains_key(&chatroom_name) {
-            if let Some(&mut room) = self.chatrooms.get_mut(&chatroom_name) {
-                if let Ok(_) = room.join(client) {
-                    Ok(ActionStatus::OK)
-                } else {
-                    Err(ActionStatus::Failed)
-                }
-            } else {
-                Err(ActionStatus::Failed)
-            }
-        } else {
-            Err(ActionStatus::Invalid)
-        }
-        */
-        unimplemented!();
     }
 
     /// Find a connection in the slab using the given token.

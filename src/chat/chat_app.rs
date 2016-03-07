@@ -37,15 +37,22 @@ impl ChatApp {
     }
 
     pub fn handle_server_message(&mut self, tok : Token, s : String) -> ServerResponse {
-        if let Some(cm) = Message::from_string(s) {
+        if let Some(cm) = Message::from_string(s, tok) {
             match cm.message_type() {
-                Connect => { self.handle_connect(cm, tok) },
+                // Grab an ID from the server
+                MessageType::Connect => { self.handle_connect(cm, tok) }
 
-            	Join =>   { self.handle_join(cm, tok) }
+                // Show all the rooms available
+                MessageType::Show => { self.handle_show(cm, tok) }
 
-            	Leave =>  { self.handle_leave(cm, tok) },
+                // Join a room.
+            	Join =>  { self.handle_join(cm, tok) }
 
-            	Action => { self.handle_action(cm, tok) },
+                // Leave a room
+            	Leave =>  { self.handle_leave(cm, tok) }
+
+                // Action
+            	Action => { self.handle_action(cm, tok) }
 
                 _ => {
                     //It's either a confirm or reject
@@ -55,6 +62,10 @@ impl ChatApp {
         } else {
             unimplemented!();
         }
+    }
+
+    fn handle_show(&mut self, cm : Message, tok : Token) -> ServerResponse  {
+        unimplemented!();
     }
 
     fn handle_connect(&mut self, cm : Message, tok : Token) -> ServerResponse {
