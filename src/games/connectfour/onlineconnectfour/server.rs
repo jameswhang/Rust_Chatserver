@@ -1,7 +1,7 @@
 use std::fmt;
 use super::message::*;
 use super::message::ConnectFourMType::*;
-use super::super::{ConnectFour};
+use super::super::{ConnectFour, Game, TurnBasedGame};
 
 
 
@@ -23,7 +23,7 @@ impl ConnectFourServer {
         }
     }
 
-    pub fn handle_message(&mut self, message : String) -> Result<Vec<String>, &str> {
+    pub fn handle_message(&mut self, message : &String) -> Result<Vec<String>, &str> {
         if let Some(payload) = ConnectFourMessagePayload::from_string(message) {
             match payload.m_type() {
                 Join =>   Ok(self.handle_join(&payload).into_iter().map(|m| m.to_string()).collect::<Vec<String>>()),

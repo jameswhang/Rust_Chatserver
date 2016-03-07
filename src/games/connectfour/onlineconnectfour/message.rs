@@ -92,7 +92,7 @@ impl ConnectFourMessagePayload {
         format!("{}", self)
     }
 
-    pub fn from_string(data : String) -> Option<ConnectFourMessagePayload> {
+    pub fn from_string(data : &String) -> Option<ConnectFourMessagePayload> {
         let mut split = data.split('|');
 
         if split.size_hint().1.unwrap() != 3 {

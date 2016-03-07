@@ -1,34 +1,57 @@
 use super::types::*;
+use super::message::Message;
+use super::message::MessageType::*;
 use super::chat_client::{ChatClient};
+use super::super::games::connectfour::{ConnectFourServer};
+use std::collections::HashSet;
+use std::io::{Write};
 
 
-pub struct ChatRoom<'a> {
-    name: String,
-    clients: ClientMap<'a>,
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct ChatRoom<T> {
+    name: Id,
+    clients: Vec<Id>,
+    game : ConnectFourServer,
+    handle : T,
 }
 
-impl<'a> ChatRoom<'a> {
-    pub fn new(name: String) -> ChatRoom<'a> {
+impl<T : Write> ChatRoom<T> {
+    pub fn new(name: String, handle : T) -> ChatRoom<T> {
         ChatRoom {
             name: name,
-            clients: ClientMap::new(),
+            clients: vec![],
+            game : ConnectFourServer::new(),
+            handle : handle,
         }
     }
 
-    pub fn join(&mut self, new_client: &'a ChatClient) ->
-        Result<ActionStatus, ActionStatus> {
-            /*
-        if self.clients.len() == 2 {
-            Err(ActionStatus::Failed)
+    pub fn handle_message(&mut self, cm : &Message) {
+        if cm.message_type() != Action {
+
         } else {
-            self.clients.insert(new_client.id, new_client);
-            Ok(ActionStatus::OK)
+            match self.game.handle_message(cm.message()) {
+                Ok(messages) => {
+                    for ref client in &self.clients {
+                        for ref message in &messages {
+                            // self.handle.write(&*message.clone().into_bytes().as_slice());
+                        }
+                    }
+                },
+
+                Err(s) => {
+                    unimplemented!();
+                },
+            }
         }
-        */
-            unimplemented!();
     }
 
-    pub fn remove(&mut self, client_id: &Id) {
-        self.clients.remove(client_id);
+    pub fn join(&mut self, new_client: Id) {
+        self.clients.push(new_client);
+    }
+
+    pub fn leave(&mut self, client_id: &Id) {
+        if let Ok(cindex) = self.clients.binary_search(client_id) {
+            self.clients.remove(cindex);
+        }
     }
 }
