@@ -10,5 +10,5 @@ pub use self::multiindex::*;
 
 pub mod connectfour;
 
-//pub mod boggle;
+pub mod boggle;
 //pub mod onlineboggle;
