@@ -1,5 +1,5 @@
 extern crate rand;
-use rand::distributions::{IndependentSample, Range};
+use self::rand::distributions::{IndependentSample, Range};
 
 const NUM_ROWS: usize = 4;
 const NUM_COLS: usize = 4;
