@@ -34,27 +34,27 @@ impl Message {
    	}
    }
 
-   fn id(&self) -> &Id {
+   pub fn id(&self) -> &Id {
 	   &self.message_id
    }
 
-   fn date(&self) -> Time {
+   pub fn date(&self) -> Time {
 	  self.date.clone()
    }
 
-   fn sender(&self) -> &Id {
+   pub fn sender(&self) -> &Id {
 	   &self.sender
    }
 
-   fn receiver(&self) -> &Id {
+   pub fn receiver(&self) -> &Id {
 	   &self.receiver
    }
 
-   fn message_type(&self) -> MessageType {
+   pub fn message_type(&self) -> MessageType {
 	   self.message_type.clone()
    }
 
-   fn message(&self) -> &String {
+   pub fn message(&self) -> &String {
 	   &self.message
    }
 }

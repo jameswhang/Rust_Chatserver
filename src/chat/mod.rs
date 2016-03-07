@@ -5,3 +5,4 @@ pub mod chat_connection;
 pub mod chatter;
 pub mod message;
 pub mod chat_room;
+pub mod message_tests;
