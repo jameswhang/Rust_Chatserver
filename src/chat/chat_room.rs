@@ -2,7 +2,7 @@ use super::types::*;
 use super::message::Message;
 use super::message::MessageType::*;
 use super::chat_client::{ChatClient};
-use super::super::games::connectfour::{ConnectFourServer};
+//use super::super::games::connectfour::{ConnectFourServer};
 use std::collections::HashSet;
 use std::io::{Write};
 
@@ -11,7 +11,7 @@ use std::io::{Write};
 pub struct ChatRoom<T> {
     name: Id,
     clients: Vec<Id>,
-    game : ConnectFourServer,
+    //game : ConnectFourServer,
     handle : T,
 }
 
@@ -20,7 +20,7 @@ impl<T : Write> ChatRoom<T> {
         ChatRoom {
             name: name,
             clients: vec![],
-            game : ConnectFourServer::new(),
+            //game : ConnectFourServer::new(),
             handle : handle,
         }
     }
@@ -29,6 +29,7 @@ impl<T : Write> ChatRoom<T> {
         if cm.message_type() != Action {
 
         } else {
+            /*
             match self.game.handle_message(cm.message()) {
                 Ok(messages) => {
                     for ref client in &self.clients {
@@ -42,6 +43,8 @@ impl<T : Write> ChatRoom<T> {
                     unimplemented!();
                 },
             }
+            */
+            unimplemented!();
         }
     }
 
