@@ -9,7 +9,6 @@ pub mod multiindex;
 pub use self::multiindex::*;
 
 pub mod connectfour;
-// pub mod onlineconnectfour;
 
 //pub mod boggle;
 //pub mod onlineboggle;

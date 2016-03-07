@@ -11,6 +11,8 @@ pub enum ConnectFourMType {
     Join,
     Update,
     Exit,
+    Confirm,
+    Reject,
 }
 
 impl ConnectFourMType {
@@ -19,6 +21,8 @@ impl ConnectFourMType {
             "JOIN" => Some(ConnectFourMType::Join),
             "UPDATE" => Some(ConnectFourMType::Update),
             "EXIT" => Some(ConnectFourMType::Exit),
+            "CONFIRM" => Some(ConnectFourMType::Confirm),
+            "REJECT" => Some(ConnectFourMType::Reject),
             _ => None,
         }
     }
@@ -28,21 +32,15 @@ impl ConnectFourMType {
             "JOIN" => Some(ConnectFourMType::Join),
             "UPDATE" => Some(ConnectFourMType::Update),
             "EXIT" => Some(ConnectFourMType::Exit),
+            "CONFIRM" => Some(ConnectFourMType::Confirm),
+            "REJECT" => Some(ConnectFourMType::Reject),
             _ => None,
         }
     }
 
-    // fn from_u8(data : &[u8]) -> Option<ConnectFourMType> {
-    //     ConnectFourMType::from_str(str::from_utf8(data).expect("str from u8 failed"))
-    // }
-
     fn to_string(&self) -> String {
         format!("{}", self)
     }
-
-    // fn as_bytes(&self) -> &[u8] {
-    //     self.to_string().as_bytes()
-    // }
 }
 
 impl fmt::Display for ConnectFourMType {
@@ -52,6 +50,8 @@ impl fmt::Display for ConnectFourMType {
                 ConnectFourMType::Join => "JOIN",
                 ConnectFourMType::Update => "UPDATE",
                 ConnectFourMType::Exit => "EXIT",
+                ConnectFourMType::Reject => "REJECT",
+                ConnectFourMType::Confirm =>"CONFIRM"
             }
         )
     }
@@ -68,9 +68,9 @@ pub struct ConnectFourMessagePayload {
 
 
 impl ConnectFourMessagePayload {
-    pub fn new(sender : String, m_type: ConnectFourMType, content: String) -> ConnectFourMessagePayload {
+    pub fn new(sender : &String, m_type: ConnectFourMType, content: String) -> ConnectFourMessagePayload {
         ConnectFourMessagePayload {
-            sender : sender,
+            sender : sender.clone(),
             m_type : m_type,
             content : content,
         }
@@ -84,24 +84,20 @@ impl ConnectFourMessagePayload {
         }
     }
 
-    // pub fn as_bytes(&self) -> &[u8] {
-    //     self.to_string().as_bytes()
-    // }
-
     pub fn to_string(&self) -> String {
         format!("{}", self)
     }
 
-    pub fn from_string(data : String) -> Option<ConnectFourMessagePayload> {
-        let mut split = data.split('|');
+    pub fn from_string(data : &String) -> Option<ConnectFourMessagePayload> {
+        let mut split : Vec<&str> = data.split('|').collect();
 
-        if split.size_hint().1.unwrap() != 3 {
+        if split.len() != 3 {
             return None;
         }
 
-        let id = split.nth(0).unwrap();
-        let m_type_raw = split.nth(1).unwrap();
-        let content = split.nth(2).unwrap();
+        let id = split[0];
+        let m_type_raw = split[1];
+        let content = split[2];
 
         if let Some(m_type) =  ConnectFourMType::from_string(m_type_raw.to_string()) {
             return Some(ConnectFourMessagePayload::new_from_str(id.to_string(), m_type, content));
@@ -110,9 +106,9 @@ impl ConnectFourMessagePayload {
         }
     }
 
-    // pub fn from_u8(data: &[u8]) -> Option<ConnectFourMessagePayload> {
-    //     ConnectFourMessagePayload::from_string(str::from_utf8(data).expect("utf8 to str failed").to_string())
-    // }
+    pub fn from_str(data : &str) ->Option<ConnectFourMessagePayload> {
+        ConnectFourMessagePayload::from_string(&data.to_string())
+    }
 
     pub fn m_type(&self) -> ConnectFourMType {
         self.m_type.clone()
@@ -131,5 +127,69 @@ impl ConnectFourMessagePayload {
 impl fmt::Display for ConnectFourMessagePayload {
     fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}|{}|{}",self.sender, self.m_type, self.content)
+    }
+}
+
+
+#[cfg(test)]
+mod connect_four_message_tests {
+    use super::*;
+    use super::ConnectFourMType::*;
+
+    #[test]
+    fn to_string_test1() {
+        assert_eqstr(ConnectFourMessagePayload::new_from_str("Tester".to_string(), Join, "Tester"), "Tester|JOIN|Tester");
+    }
+
+    #[test]
+    fn to_string_test2() {
+        assert_eqstr(ConnectFourMessagePayload::new_from_str("Tester".to_string(), Update, "Tester"), "Tester|UPDATE|Tester");
+    }
+
+    #[test]
+    fn to_string_test3() {
+        assert_eqstr(ConnectFourMessagePayload::new_from_str("Tester".to_string(), Exit, "Tester"), "Tester|EXIT|Tester");
+    }
+
+    #[test]
+    fn to_string_test4() {
+        assert_eqstr(ConnectFourMessagePayload::new_from_str("Tester".to_string(), Confirm, "Tester"), "Tester|CONFIRM|Tester");
+    }
+
+    #[test]
+    fn to_string_test5() {
+        assert_eqstr(ConnectFourMessagePayload::new_from_str("Tester".to_string(), Reject, "Tester"), "Tester|REJECT|Tester");
+    }
+
+    fn assert_eqstr(m : ConnectFourMessagePayload, s : &str) {
+        assert_eq!(m.to_string(), s.to_string());
+    }
+
+    #[test]
+    fn from_string_test1() {
+        assert_eqstr(ConnectFourMessagePayload::from_str("Tester|JOIN|Tester").unwrap(), "Tester|JOIN|Tester");
+    }
+
+    #[test]
+    fn from_string_test2() {
+        assert_eqstr(ConnectFourMessagePayload::from_str("Tester|CONFIRM|Tester").unwrap(), "Tester|CONFIRM|Tester");
+    }
+
+    #[test]
+    fn from_string_test3() {
+        assert_eqstr(ConnectFourMessagePayload::from_str("Tester|EXIT|Tester").unwrap(), "Tester|EXIT|Tester");
+    }
+
+    #[test]
+    fn from_string_test4() {
+        assert_eqstr(ConnectFourMessagePayload::from_str("Tester|UPDATE|Tester").unwrap(), "Tester|UPDATE|Tester");
+    }
+    #[test]
+    fn from_string_test5() {
+        assert_eqstr(ConnectFourMessagePayload::from_str("Tester|REJECT|Tester").unwrap(), "Tester|REJECT|Tester");
+    }
+
+    fn get_test_cfmp() -> ConnectFourMessagePayload {
+        ConnectFourMessagePayload::new_from_str("Tester".to_string(), Join, "Tester")
     }
 }
