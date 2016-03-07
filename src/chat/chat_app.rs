@@ -36,16 +36,16 @@ impl ChatApp {
         }
     }
 
-    pub fn handle_server_message(&mut self, tok : Token, s : String) {
+    pub fn handle_server_message(&mut self, tok : Token, s : String) -> ServerResponse {
         if let Some(cm) = Message::from_string(s) {
             match cm.message_type() {
-                Connect => { self.handle_connect(cm, tok); },
+                Connect => { self.handle_connect(cm, tok) },
 
-            	Join =>   { self.handle_join(cm, tok); }
+            	Join =>   { self.handle_join(cm, tok) }
 
-            	Leave =>  { self.handle_leave(cm, tok); },
+            	Leave =>  { self.handle_leave(cm, tok) },
 
-            	Action => { self.handle_action(cm, tok); },
+            	Action => { self.handle_action(cm, tok) },
 
                 _ => {
                     //It's either a confirm or reject
@@ -57,8 +57,8 @@ impl ChatApp {
         }
     }
 
-    fn handle_connect(&mut self, cm : Message, tok : Token) {
-        let player_id = cm.message().clone();
+    fn handle_connect(&mut self, cm : Message, tok : Token) -> ServerResponse {
+        let player_id = cm.payload().clone();
         let mid = cm.id().clone();
 
         if let Vacant(ic_entry) = self.id_to_conn.entry(player_id.clone()) {
@@ -69,8 +69,8 @@ impl ChatApp {
 
                 let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                             "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "".to_string());
-                
-                // TODO: Return something
+
+                ServerResponse::new(mconfirm)
             }
 
             //old connection wants new name
@@ -85,12 +85,11 @@ impl ChatApp {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Requested ID is already taken".to_string());
 
-            //self.handle_to_mio_to_write_with.write_to_client_stream(mreject.into_bytes().as_slice());
-            // TODO: Return something
+            return ServerResponse::new(mreject)
         }
     }
 
-    fn handle_join(&mut self, cm : Message, tok : Token) {
+    fn handle_join(&mut self, cm : Message, tok : Token) -> ServerResponse {
         let player_id = cm.sender().clone();
         let mid = cm.id().clone();
 
@@ -100,31 +99,35 @@ impl ChatApp {
                 Occupied(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Please leave your room first".to_string());
-//                    self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
-//                    // TODO: Return something
+                    ServerResponse::new(mreject)
                 },
 
                 //user is free to join any room they wnat
                 Vacant(good_entry) => {
                     // room exists - go for it
-                    if self.id_to_room.contains_key(cm.message()) {
-                        good_entry.insert(cm.message().clone());
+                    if self.id_to_room.contains_key(cm.payload()) {
+                        good_entry.insert(cm.payload().clone());
                         let mconfirm = Message::new(cm.id().clone(), UTC::now(),
-                                    "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome to: {}", cm.message()));
-                        //self.handle_to_mio_to_write_with.write(mconfirm.into_bytes().as_slice());
-                        // TODO: Return something
+                                    "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome to: {}", cm.payload()));
+                        ServerResponse::new(mconfirm)
                     } else {
                         let mreject = Message::new(cm.id().clone(), UTC::now(),
                                     "SERVER".to_string(), cm.sender().clone(), Reject(mid), "No room with that name found".to_string());
-                        //self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
-                        //TODO: Return something
+                        ServerResponse::new(mreject)
                     }
                 }
             }
+        } else {
+            // Shouldn't even be here unless a fake ID was generated somehow
+            println!("WARNING: Unverified ID");
+            let mreject = Message::new(cm.id().clone(), UTC::now(), 
+                        "SERVER".to_string(), cm.sender().clone(), Reject(mid),
+                        "Unverified ID".to_string());
+            ServerResponse::new(mreject)
         }
     }
 
-    fn handle_leave(&mut self, cm : Message, tok : Token) {
+    fn handle_leave(&mut self, cm : Message, tok : Token) -> ServerResponse {
         let player_id = cm.sender().clone();
         let mid = cm.id().clone();
 
@@ -134,8 +137,7 @@ impl ChatApp {
                 Vacant(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
                         cm.sender().clone(), Reject(mid), "You are not currently in a room".to_string());
-//                    self.handle_to_mio_to_write_with.write(mreject.into_bytes().as_slice());
-//                    // TODO: Return something
+                    ServerResponse::new(mreject)
                 },
 
                 //user is in a room, make it blank
@@ -143,16 +145,22 @@ impl ChatApp {
                     good_entry.remove();
                     let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "You've left the room.".to_string());
-                    //self.handle_to_mio_to_write_with.write(mconfirm.into_bytes().as_slice());
-                    // TODO: Return something
+                    ServerResponse::new(mconfirm)
                 }
             }
+        } else {
+            // Shouldn't even be here unless a fake ID was generated somehow
+            println!("WARNING: Unverified ID");
+            let mreject = Message::new(cm.id().clone(), UTC::now(), 
+                        "SERVER".to_string(), cm.sender().clone(), Reject(mid),
+                        "Unverified ID".to_string());
+            ServerResponse::new(mreject)
         }
     }
 
 
 
-    fn handle_action(&mut self, cm : Message, tok : Token) {
+    fn handle_action(&mut self, cm : Message, tok : Token) -> ServerResponse {
         unimplemented!()
     }
 
