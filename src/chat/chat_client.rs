@@ -5,6 +5,7 @@ extern crate byteorder;
 "]
 
 use super::message::{MessageType, Message};
+use super::types::*;
 
 use std::io::prelude::*;
 use std::net::TcpStream;
@@ -29,12 +30,14 @@ pub enum ClientStatus {
 // server client.
 pub struct ChatClient {
     stream: TcpStream,
+    pub id: Id,
 }
 
 impl ChatClient {
-    pub fn new(server_addr: SocketAddr) -> ChatClient {
+    pub fn new(server_addr: SocketAddr, id: Id) -> ChatClient {
         ChatClient {
-            stream: TcpStream::connect(&server_addr).unwrap()
+            stream: TcpStream::connect(&server_addr).unwrap(),
+            id: id,
         }
     }
 

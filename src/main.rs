@@ -37,7 +37,7 @@ fn main(){
 }
 
 fn start_client(server_address : SocketAddr) {
-	let mut client = ChatClient::new(server_address);
+	let mut client = ChatClient::new(server_address, "1".to_owned());
     client.show_all_rooms();
 
 

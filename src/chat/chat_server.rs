@@ -9,19 +9,18 @@ use self::mio::tcp::*;
 use self::mio::util::Slab;
 
 use super::chat_connection::Connection;
+use super::chat_client::ChatClient;
+use super::chat_room::ChatRoom;
+use super::types::*;
 
-pub struct ChatServer {
-    // main socket for our server
+pub struct ChatServer<'b> {
     sock: TcpListener,
-
-    // token of our server. we keep track of it here instead of doing `const SERVER = Token(0)`.
     token: Token,
-
-    // a list of connections _accepted_ by our server
     conns: Slab<Connection>,
+    chatrooms: RoomMap<'b>,
 }
 
-impl Handler for ChatServer {
+impl<'b> mio::Handler for ChatServer<'b> {
     type Timeout = ();
     type Message = ();
 
@@ -118,9 +117,10 @@ impl Handler for ChatServer {
     }
 }
 
-impl ChatServer {
-    pub fn new(sock: TcpListener) -> ChatServer {
-        ChatServer {
+impl<'b> ChatServer<'b> {
+    // Initializing a server from a provided TCP socket
+	pub fn new(sock: TcpListener) -> ChatServer<'b> {
+		ChatServer {
             sock: sock,
 
             // I don't use Token(0) because kqueue will send stuff to Token(0)
@@ -128,12 +128,10 @@ impl ChatServer {
             // something as Token(0), I know there are kqueue shenanigans
             // going on.
             token: Token(1),
-
-            // SERVER is Token(1), so start after that
-            // we can deal with a max of 126 connections
-            conns: Slab::new_starting_at(Token(2), 128),
-        }
-    }
+			conns: Slab::new_starting_at(mio::Token(2), 128),
+            chatrooms: RoomMap::new(),
+		}
+	}
 
     /// Register ChatServer with the event loop.
     ///
@@ -149,6 +147,7 @@ impl ChatServer {
             Err(e)
         })
     }
+
     ///
     /// The server will keep track of the new connection and forward any events from the event loop
     /// to this connection.
@@ -156,8 +155,7 @@ impl ChatServer {
         println!("server accepting new socket");
 
         loop {
-            // Log an error if there is no socket, but otherwise move on so we do not tear down the
-            // entire server.
+            // Log an error if there is no socket, but otherwise move on
             let sock = match self.sock.accept() {
                 Ok(s) => {
                     match s {
@@ -231,6 +229,48 @@ impl ChatServer {
             "SHOWROOM" => b"showtest",
             _ => b"testtest",
         }
+    }
+
+    pub fn add_connectfour_client(&mut self, chatroom_name: String, client: &'b ChatClient) ->
+        Result<ActionStatus, ActionStatus> {
+            /*
+        if self.chatrooms.contains_key(&chatroom_name) {
+            if let Some(&mut room) = self.chatrooms.get_mut(&chatroom_name) {
+                if let Ok(_) = room.join(client) {
+                    Ok(ActionStatus::OK)
+                } else {
+                    Err(ActionStatus::Failed)
+                }
+            } else {
+                Err(ActionStatus::Failed)
+            }
+        } else {
+            Err(ActionStatus::Invalid)
+        }
+        */
+        unimplemented!();
+    }
+
+    pub fn add_chatroom(&mut self, chatroom_name: String, chatroom: &'b &ChatRoom<'b>) {
+        self.chatrooms.insert(chatroom_name, &chatroom);
+    }
+
+    pub fn remove_connectfour_client(&mut self, chatroom_name: String, client_id: Id) ->
+    Result<ActionStatus, ActionStatus> {
+        /*
+        if self.chatrooms.contains_key(&chatroom_name) {
+            let room = self.chatrooms.get_mut(&chatroom_name).unwrap();
+            room.remove(&client_id);
+            Ok(ActionStatus::OK)
+        } else {
+            Err(ActionStatus::Invalid)
+        }
+        */
+        unimplemented!();
+    }
+
+    pub fn remove_room(&mut self, chatroom_name: String) {
+        self.chatrooms.remove(&chatroom_name);
     }
 
     /// Find a connection in the slab using the given token.
