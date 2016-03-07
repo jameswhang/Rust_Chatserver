@@ -1,6 +1,9 @@
 extern crate rand;
 use rand::distributions::{IndependentSample, Range};
 
+use std::ops::Index;
+use std::io::{self, Read, stdin};
+
 const NUM_ROWS: usize = 4;
 const NUM_COLS: usize = 4;
 const DIES: [[&'static str; 6]; 16] = [["R", "I", "F", "O", "B", "X"],
@@ -21,10 +24,11 @@ const DIES: [[&'static str; 6]; 16] = [["R", "I", "F", "O", "B", "X"],
                                       ["P", "A", "C", "E", "M", "D"]];
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct BoggleBoard {
     //a 4x4 board
-    board : [[&'static str; NUM_COLS] ; NUM_ROWS],
+    spots : [[&'static str; NUM_COLS] ; NUM_ROWS],
+    visited : [[bool; NUM_COLS]; NUM_ROWS],
 }
 
 impl BoggleBoard {
@@ -55,27 +59,135 @@ impl BoggleBoard {
 
         // make boggle board
         BoggleBoard {
-            board : [[insert_letters[0], insert_letters[1], insert_letters[2], insert_letters[3]],
+            spots : [[insert_letters[0], insert_letters[1], insert_letters[2], insert_letters[3]],
                      [insert_letters[4], insert_letters[5], insert_letters[6], insert_letters[7]],
                      [insert_letters[8], insert_letters[9], insert_letters[10], insert_letters[11]],
                      [insert_letters[12], insert_letters[13], insert_letters[14], insert_letters[15]]],
+            visited: [[false; NUM_COLS]; NUM_ROWS],
         }
     }
 
+    fn reset_visits(&mut self) {
+        self.visited = [[false; NUM_COLS]; NUM_ROWS];
+    }
+
     fn display(self) {
+        // displays boggle board on screen
         for row in 0..4 {
             let mut line = "".to_string();
             for col in 0..4 {
-                line = line + self.board[row][col] + " ";
+                line = line + &self.spots[row][col] + " ";
             }
             println!("{}", line);
         }
+    }
+
+    fn check_word(&mut self, word: &str) -> bool {
+        // check to see if word valid and transform into vector of strs
+        let mut word_vec = vec![];
+        let word_len = word.len();
+        let mut word_iter = word.chars();
+        if word_len > 0 {
+            for i in 0..word.len() {
+                &word_vec.push(word_iter.next().unwrap().to_string().to_uppercase());
+            }
+        } else {
+            println!("Word is invalid.");
+            return false;
+        }
+
+        // see if first letter exists in grid
+        let mut first_letter = word_vec[0].clone();
+        let mut first_letter_matches = vec![];
+        for row in 0..4 {
+            for col in 0..4 {
+                if &first_letter == self.spots[row][col] {
+                    first_letter_matches.push((row, col));
+                }
+            }
+        }
+
+        // if yes, BFS to find matching word
+        if first_letter_matches.len() > 0 {
+            // println!("Found first letter match!");
+
+            // check every possible first letter
+            for first_letter_idx in first_letter_matches {
+
+                // reset visited spots, visit myself
+                BoggleBoard::reset_visits(self);
+                self.visited[first_letter_idx.0][first_letter_idx.1] = true;
+
+                let mut queue = vec![];
+                queue.push((first_letter_idx, 1));
+
+                // BFS
+                while queue.len() > 0 {
+                    let idx = queue.pop().unwrap();
+                    // println!("Checking spot {} {}",(idx.0).0,(idx.0).1);
+                    //
+                    // println!("idx {}, word len {}", idx.1, word_len);
+
+                    if idx.1 == word_len {
+                        println!("Found word!!");
+                        return true;
+                    }
+                    let neighbors = BoggleBoard::find_unvisited_neighbors(self, idx.0);
+                    for item in neighbors {
+                        // println!("Checking if neighbor {} {} is {}", item.0, item.1, word_vec[idx.1]);
+                        if self.spots[item.0][item.1] == word_vec[idx.1] {
+                            self.visited[item.0][item.1] = true;
+                            queue.push((item, idx.1 + 1));
+                        }
+                    }
+                }
+            }
+        }
+
+        println!("Did not find word.");
+        false
+    }
+
+    fn find_unvisited_neighbors(&self, idx: (usize, usize)) -> Vec<(usize, usize)> {
+        let mut unvisited = vec![];
+
+        for i in 0..3 {
+            for j in 0..3 {
+                let temp_idx: (isize, isize) = (idx.0 as isize + i - 1, idx.1 as isize + j - 1);
+                if BoggleBoard::check_valid_index(temp_idx){
+                    //recast to usize
+                    let temp_idx: (usize, usize) = (temp_idx.0 as usize, temp_idx.1 as usize);
+                    if self.visited[temp_idx.0][temp_idx.1] != true {
+                        unvisited.push(temp_idx);
+                    }
+                }
+            }
+        }
+        unvisited
+    }
+
+    fn check_valid_index(idx: (isize, isize)) -> bool {
+        if idx.0 >= 0 && idx.0 < 4 && idx.1 >= 0 && idx.1 < 4 {
+            return true;
+        }
+        false
     }
 }
 
 
 fn main() {
-    println!("Hello, world!");
-    let boggle_board = BoggleBoard::new();
+    let mut boggle_board = BoggleBoard::new();
     boggle_board.display();
+    boggle_board.check_word("hello");
+
+    let mut input = String::new();
+    while input != "!quit\n".to_owned() {
+        input = String::new();
+        match stdin().read_line(&mut input) {
+            Ok(_) => {
+                boggle_board.check_word(&input.split_whitespace().next().unwrap());
+            }
+            Err(error) => println!("Error reading input: {}", error)
+        }
+    }
 }
