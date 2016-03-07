@@ -7,7 +7,7 @@ use super::super::{ConnectFour, Game, TurnBasedGame};
 const SERVER_ID : &'static str= "SERVER";
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-enum ClientState {
+pub enum ClientState {
     Joining,
     Playing,
     Leaving,
@@ -22,69 +22,67 @@ pub struct ConnectFourClient {
 }
 
 
-impl ConnectFourServer {
-    pub fn new() -> ConnectFourServer {
-        ConnectFourServer {
+impl ConnectFourClient {
+    pub fn new(id : &String) -> ConnectFourClient {
+        ConnectFourClient{
             game : ConnectFour::new(),
-            move_history : vec![],
+            state : ClientState::Joining,
+            id : id.clone(),
         }
     }
 
-    pub fn handle_message(&mut self, message : &String) -> Result<Vec<String>, &str> {
+    pub fn handle_message(&mut self, message : &String) {
         if let Some(payload) = ConnectFourMessagePayload::from_string(message) {
             match payload.m_type() {
-                Join =>   Ok(self.handle_join(&payload),
-                Update => Ok(self.handle_update(&payload),
-                Exit =>   Ok(self.handle_exit(&payload),
-                _ => unimplemented!(),
+                Join =>   self.handle_join(&payload),
+                Update => self.handle_update(&payload),
+                Exit =>   self.handle_exit(&payload),
+                _ => {;},
             }
-        } else {
-            Err("Invalid payload received")
         }
     }
 
-    pub fn handle_input(&mut self, message : &String) -> Result<Vec<String>>, &str> {
-        match *message.trim()to_lowercase() {
+    pub fn handle_input(&mut self, message : &String) -> Result<Vec<String>, &str> {
+        match &*message.trim().to_lowercase() {
             "join"  => {
                 self.state = ClientState::Joining;
-                self.make_join()
+                return Ok(self.make_join())
             },
 
             "leave" => {
                 self.state = ClientState::Leaving;
-                self.make_leave()
+                return Ok(self.make_leave())
             },
 
             _ => {
-                self.make_update(&message)
+                return Ok(self.make_update(message))
             }
         }
     }
 
     fn make_join(&self) -> Vec<String> {
-        vec![ConnectFourMessagePayload::new(&self.id, Join, self.id.clone())]
+        vec![ConnectFourMessagePayload::new(&self.id, Join, self.id.clone()).to_string()]
     }
 
     fn make_leave(&self) -> Vec<String> {
-        vec![ConnectFourMessagePayload::new(&self.id, Exit, self.id.clone())]
+        vec![ConnectFourMessagePayload::new(&self.id, Exit, self.id.clone()).to_string()]
     }
 
-    fn make_update(&self, s : String) -> Vec<String> {
-        vec![ConnectFourMessagePayload::new(&self.id, Exit, s.clone())]
+    fn make_update(&self, s : &String) -> Vec<String> {
+        vec![ConnectFourMessagePayload::new(&self.id, Exit, s.clone()).to_string()]
     }
 
-    fn handle_join(&mut self, message : &ConnectFourMessagePayload) -> Vec<ConnectFourMessagePayload> {
+    fn handle_join(&mut self, message : &ConnectFourMessagePayload){
         let _SERVER_ID = SERVER_ID.to_string();
-        let mcontent = message.content().clone();
         let player_id = message.sender().clone();
 
 
         if player_id == _SERVER_ID {
-            if self.id == message.sender() {
+            if self.id == *message.sender() {
                 self.state = ClientState::Playing;
             }
 
-            self.game.add_player(mcontent);
+            self.game.add_player(message.sender());
         }
     }
 
@@ -99,12 +97,12 @@ impl ConnectFourServer {
         }
     }
 
-    pub fn handle_exit(&mut self, message : &ConnectFourMessagePayload) -> Vec<ConnectFourMessagePayload> {
+    pub fn handle_exit(&mut self, message : &ConnectFourMessagePayload) {
         let _SERVER_ID = SERVER_ID.to_string();
         let player_id = message.sender().clone();
 
         if player_id == _SERVER_ID {
-            self.game.remove_player(&player_id)
+            self.game.remove_player(&player_id);
         }
     }
 
@@ -112,7 +110,7 @@ impl ConnectFourServer {
         &self.game
     }
 
-    pub fn state(&self) -> &ClientState {
+    pub fn state(&self) -> ClientState {
         self.state.clone()
     }
 }
