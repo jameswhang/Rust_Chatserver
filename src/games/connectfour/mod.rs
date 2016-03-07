@@ -1,20 +1,21 @@
 pub mod connectfourboard;
-// pub mod onlineconnectfour;
+pub use self::connectfourboard::*;
+
+pub mod onlineconnectfour;
 // mod test;
 
 use std::ops::Index;
 use std::collections::HashMap;
 use std::fmt;
 
-use super::{Game, TurnBasedGame, Player, GameState, GResult, GResultChat, MultiIndex, Id};
+pub use super::{Game, TurnBasedGame, Player, GameState, GResult, GResultChat, MultiIndex, Id};
 use super::PlayerType::*;
-use self::connectfourboard::*;
 
 pub const NUM_ROWS : usize = 6;
 pub const NUM_COLS : usize = 7;
 
 /// Struct to play the game - ConnectFour
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct ConnectFour {
     board: ConnectFourBoard,
     players : Vec<Player>, // two-player game
@@ -30,10 +31,10 @@ impl ConnectFour {
         }
     }
 
-    pub fn new_with_players(id1 : String, id2 : String) -> ConnectFour {
+    pub fn new_with_players(id1 : &String, id2 : &String) -> ConnectFour {
         ConnectFour{
             board: ConnectFourBoard::new(),
-            players: vec![Player::new(Human, id1), Player::new(Human, id2)],
+            players: vec![Player::new(Human, id1.clone()), Player::new(Human, id2.clone())],
             turn : 0,
         }
     }
@@ -61,10 +62,14 @@ impl ConnectFour {
         }
     }
 
-    pub fn add_player(&mut self, id : String) -> GResult<&str> {
+    pub fn add_player(&mut self, id : &String) -> GResult<&str> {
         if !self.is_full() {
-            self.players.push(Player::new(Human, id));
-            Ok(GameState::Ongoing)
+            self.players.push(Player::new(Human, id.clone()));
+            if self.is_full() {
+                Ok(GameState::Ongoing)
+            } else {
+                Ok(GameState::Finished)
+            }
         } else {
             Err("Game is full")
         }
@@ -84,8 +89,8 @@ impl Game for ConnectFour{
     }
 
 
-    fn is_playing(&self, player_id : Id) -> bool {
-        self.players.iter().filter(|x| *x.id() == player_id).size_hint().1.unwrap() > 0
+    fn is_playing(&self, player_id : &Id) -> bool {
+        self.players.iter().filter(|x| *x.id() == *player_id).size_hint().1.unwrap() > 0
     }
 
 

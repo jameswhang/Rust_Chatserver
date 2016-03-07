@@ -6,7 +6,7 @@ use super::{NUM_ROWS, NUM_COLS};
 
 
 /// Used to store the connect four board state
-#[derive(Debug, PartialEq, Eq, Clone, )]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct ConnectFourBoard {
     //a 6 by seven board
     //vector of vector

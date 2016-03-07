@@ -1,5 +1,6 @@
 use super::super::chat::message::Message;
 use super::Player;
+use std::fmt;
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -8,11 +9,20 @@ pub enum GameState {
     Finished,
 }
 
+impl fmt::Display for GameState {
+    fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            GameState::Ongoing => write!(f, "ONGOING"),
+            GameState::Finished => write!(f, "FINISHED"),
+        }
+    }
+}
+
 pub trait Game {
     /// Returns whether the game has finished
     /// @return GameState
     fn is_done(&self) -> GameState;
-    fn is_playing(&self, player_id : Id) -> bool;
+    fn is_playing(&self, player_id : &Id) -> bool;
     fn is_full(&self) -> bool;
 
     fn get_players(&self) -> &[Player];
