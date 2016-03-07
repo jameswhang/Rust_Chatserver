@@ -1,3 +1,5 @@
+mod boggleboard;
+
 use std::ops::Index;
 use super::{Game, TurnBasedGame, Player, GameState};
 use std::collections::HashMap;
@@ -11,16 +13,6 @@ const NUM_ROWS : usize = 4;
 const NUM_COLS : usize = 4;
 
 
-impl Index<(usize, usize)> for BoggleBoard {
-    type Output = Option<Player>;
-
-    fn index<'a>(&'a self, index: (usize, usize)) -> &'a Option<Player> {
-        &self.sports[index.0][index.1]
-    }
-}
-
-
-
 #[derive(PartialEq, Hash, Clone, Debug)]
 pub struct Boggle {
     board: BoggleBoard,
@@ -30,7 +22,6 @@ pub struct Boggle {
 
 impl Boggle {
     pub fn new() -> Boggle {
-        unimplemented!();
         //needs to generate words still
         Boggle {
             board: FourSquareBoard::new(),
