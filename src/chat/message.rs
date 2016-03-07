@@ -1,7 +1,9 @@
 extern crate chrono;
+extern crate mio;
 
 use super::types::*;
 use self::chrono::*;
+use self::mio::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MessageType {
@@ -23,7 +25,7 @@ pub struct Message  {
     sender : Id,
     receiver : Id,
     message_type : MessageType,
-    message : String,
+    payload: String,
 }
 
 impl Message {
@@ -34,7 +36,7 @@ impl Message {
             sender : sender as Id,
             receiver : receiver as Id,
             message_type : message_type,
-            message : message
+            payload: message
         }
     }
 
@@ -70,7 +72,34 @@ impl Message {
         self.message_type.clone()
     }
 
-    pub fn message(&self) -> &String {
-        &self.message
+    pub fn payload(&self) -> &String {
+        &self.payload
+    }
+}
+
+/// Used for passing message between Server I/O and ServerApp
+pub struct ServerResponse {
+    pub clients: Vec<mio::Token>, // vector of clients to receive the msg
+    pub message: Message, // msg to be written to the client
+}
+
+impl ServerResponse {
+    pub fn new(msg: Message) -> ServerResponse {
+        ServerResponse {
+            clients: Vec::new(),
+            message: msg,
+        }
+    }
+
+    pub fn add_client(&mut self, token: mio::Token) {
+        self.clients.push(token.clone());
+    }
+
+    pub fn clients(self) -> Vec<mio::Token> {
+        self.clients
+    }
+    
+    pub fn message(self) -> Message {
+        self.message
     }
 }

@@ -13,6 +13,7 @@ use super::chat_connection::Connection;
 use super::chat_client::ChatClient;
 use super::chat_app::ChatApp;
 use super::chat_room::ChatRoom;
+use super::message::*;
 use super::types::*;
 
 pub struct ChatServer {
@@ -215,17 +216,11 @@ impl<'b> ChatServer {
             let rc_message = Rc::new(response.to_owned());
 
 
-            // let the app handle the action
-            self.app.handle_server_message(token, handler_request);
+            // get appropriate response from app
+            let mut resp = self.app.handle_server_message(token, handler_request);
 
-
-            // Queue up a write for all connected clients.
-            for c in self.conns.iter_mut() {
-                c.send_message(rc_message.clone())
-                    .unwrap_or_else(|e| {
-                        println!("Failed to queue message for {:?}: {:?}", c.token, e);
-                        c.mark_reset();
-                    });
+            for tok in resp.clients.iter() {
+                self.write_to_client_stream(*tok, resp.message.payload().clone());
             }
         }
 
