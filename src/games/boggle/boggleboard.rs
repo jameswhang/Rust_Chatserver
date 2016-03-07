@@ -1,9 +1,6 @@
 extern crate rand;
 use rand::distributions::{IndependentSample, Range};
 
-use std::ops::Index;
-use std::io::{self, Read, stdin};
-
 const NUM_ROWS: usize = 4;
 const NUM_COLS: usize = 4;
 const DIES: [[&'static str; 6]; 16] = [["R", "I", "F", "O", "B", "X"],
@@ -24,7 +21,7 @@ const DIES: [[&'static str; 6]; 16] = [["R", "I", "F", "O", "B", "X"],
                                       ["P", "A", "C", "E", "M", "D"]];
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Hash, Copy, Clone, Debug, PartialEq)]
 pub struct BoggleBoard {
     //a 4x4 board
     spots : [[&'static str; NUM_COLS] ; NUM_ROWS],
@@ -32,7 +29,7 @@ pub struct BoggleBoard {
 }
 
 impl BoggleBoard {
-    fn new() -> BoggleBoard {
+    pub fn new() -> BoggleBoard {
         // randomize order of dies
         let mut used_dies = vec![];
         let possible_dies = Range::new(0, 16);
@@ -71,7 +68,7 @@ impl BoggleBoard {
         self.visited = [[false; NUM_COLS]; NUM_ROWS];
     }
 
-    fn display(self) {
+    pub fn display(self) {
         // displays boggle board on screen
         for row in 0..4 {
             let mut line = "".to_string();
@@ -82,7 +79,7 @@ impl BoggleBoard {
         }
     }
 
-    fn check_word(&mut self, word: &str) -> bool {
+    pub fn check_word(&mut self, word: &str) -> bool {
         // check to see if word valid and transform into vector of strs
         let mut word_vec = vec![];
         let word_len = word.len();
@@ -109,7 +106,6 @@ impl BoggleBoard {
 
         // if yes, BFS to find matching word
         if first_letter_matches.len() > 0 {
-            // println!("Found first letter match!");
 
             // check every possible first letter
             for first_letter_idx in first_letter_matches {
@@ -124,17 +120,13 @@ impl BoggleBoard {
                 // BFS
                 while queue.len() > 0 {
                     let idx = queue.pop().unwrap();
-                    // println!("Checking spot {} {}",(idx.0).0,(idx.0).1);
-                    //
-                    // println!("idx {}, word len {}", idx.1, word_len);
 
                     if idx.1 == word_len {
-                        println!("Found word!!");
+                        // println!("Found word!!");
                         return true;
                     }
                     let neighbors = BoggleBoard::find_unvisited_neighbors(self, idx.0);
                     for item in neighbors {
-                        // println!("Checking if neighbor {} {} is {}", item.0, item.1, word_vec[idx.1]);
                         if self.spots[item.0][item.1] == word_vec[idx.1] {
                             self.visited[item.0][item.1] = true;
                             queue.push((item, idx.1 + 1));
@@ -144,7 +136,7 @@ impl BoggleBoard {
             }
         }
 
-        println!("Did not find word.");
+        // println!("Did not find word.");
         false
     }
 
@@ -171,23 +163,5 @@ impl BoggleBoard {
             return true;
         }
         false
-    }
-}
-
-
-fn main() {
-    let mut boggle_board = BoggleBoard::new();
-    boggle_board.display();
-    boggle_board.check_word("hello");
-
-    let mut input = String::new();
-    while input != "!quit\n".to_owned() {
-        input = String::new();
-        match stdin().read_line(&mut input) {
-            Ok(_) => {
-                boggle_board.check_word(&input.split_whitespace().next().unwrap());
-            }
-            Err(error) => println!("Error reading input: {}", error)
-        }
     }
 }
