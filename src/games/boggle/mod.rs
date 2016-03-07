@@ -1,8 +1,8 @@
 mod boggleboard;
-use self::boggleboard::*
+use self::boggleboard::*;
 
 mod dictionary;
-use self::dictionary::*
+use self::dictionary::*;
 
 use std::ops::Index;
 use std::io::{self, Read, stdin};
@@ -13,7 +13,7 @@ use std::collections::HashMap;
 pub struct Boggle {
     board: BoggleBoard,
     dict: Dictionary,
-    // score : HashMap<Player, usize>, // two-player game
+     // score : HashMap<Player, usize>, // two-player game
     // valid_words : HashMap<String, bool>,
 }
 
@@ -69,7 +69,7 @@ impl Game for Boggle{
     // }
 
     fn reset(&mut self) {
-        self.board = BoggleBoard::new(),
+        self.board = BoggleBoard::new();
     }
 
     fn get_players(&self) -> &[Player] {
