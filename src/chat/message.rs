@@ -1,13 +1,17 @@
+extern crate chrono;
+
 use super::types::*;
+use self::chrono::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MessageType {
+	Connect,
 	Join,
 	Chat,
 	Leave,
-	Action ,
+	Action,
 	Confirm(Id),
-	//used to confirm Message actions
+	Reject(Id),
 }
 
 /// Uniquely Identifiable Message Struct via message_id, date, sender
@@ -15,7 +19,7 @@ pub enum MessageType {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Message  {
 	message_id : Id,
-	date : Time,
+	date : DateTime<UTC>,
 	sender : Id,
 	receiver : Id,
 	message_type : MessageType,
@@ -34,27 +38,39 @@ impl Message {
    	}
    }
 
-   fn id(&self) -> &Id {
+	pub fn from_string(s : String) -> Option<Message> {
+		unimplemented!();
+	}
+
+   pub fn to_string(&self) -> String {
+	   unimplemented!();
+   }
+
+   pub fn into_bytes(&self) -> Vec<u8> {
+	   self.to_string().into_bytes()
+   }
+
+   pub fn id(&self) -> &Id {
 	   &self.message_id
    }
 
-   fn date(&self) -> Time {
+   pub fn date(&self) -> Time {
 	  self.date.clone()
    }
 
-   fn sender(&self) -> &Id {
+   pub fn sender(&self) -> &Id {
 	   &self.sender
    }
 
-   fn receiver(&self) -> &Id {
+   pub fn receiver(&self) -> &Id {
 	   &self.receiver
    }
 
-   fn message_type(&self) -> MessageType {
+   pub fn message_type(&self) -> MessageType {
 	   self.message_type.clone()
    }
 
-   fn message(&self) -> &String {
+   pub fn message(&self) -> &String {
 	   &self.message
    }
 }

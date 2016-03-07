@@ -1,4 +1,4 @@
-use super::super::chat::message::Message;
+// use super::super::chat::message::Message;
 use super::Player;
 use std::fmt;
 
@@ -34,9 +34,9 @@ pub trait Game {
     fn reset(&mut self);
 }
 
-pub trait OnlineGame  : Game {
-    fn make_move_from(&mut self, player_move : Message) -> GResultChat;
-}
+// pub trait OnlineGame  : Game {
+//     fn make_move_from(&mut self, player_move : Message) -> GResultChat;
+// }
 
 pub trait TurnBasedGame : Game {
     fn whos_turn(&self) -> Player;
