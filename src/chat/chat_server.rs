@@ -10,17 +10,17 @@ use self::mio::util::Slab;
 
 use super::chat_connection::Connection;
 use super::chat_client::ChatClient;
+use super::chat_app::ChatApp;
 use super::chat_room::ChatRoom;
 use super::types::*;
 
-pub struct ChatServer<'b> {
+pub struct ChatServer {
     sock: TcpListener,
     token: Token,
     conns: Slab<Connection>,
-    chatrooms: RoomMap<'b>,
 }
 
-impl<'b> mio::Handler for ChatServer<'b> {
+impl<'b> mio::Handler for ChatServer {
     type Timeout = ();
     type Message = ();
 
@@ -117,9 +117,9 @@ impl<'b> mio::Handler for ChatServer<'b> {
     }
 }
 
-impl<'b> ChatServer<'b> {
+impl<'b> ChatServer {
     // Initializing a server from a provided TCP socket
-	pub fn new(sock: TcpListener) -> ChatServer<'b> {
+	pub fn new(sock: TcpListener) -> ChatServer {
 		ChatServer {
             sock: sock,
 
@@ -129,7 +129,7 @@ impl<'b> ChatServer<'b> {
             // going on.
             token: Token(1),
 			conns: Slab::new_starting_at(mio::Token(2), 128),
-            chatrooms: RoomMap::new(),
+            //chatrooms: RoomMap::new(),
 		}
 	}
 
@@ -204,13 +204,22 @@ impl<'b> ChatServer<'b> {
 
         while let Some(message) = try!(self.find_connection_by_token(token).readable()) {
             let msg = message.clone();
-            let msg_string = str::from_utf8(&msg).unwrap();
+            /*
+            let msg_string = String::from_utf8(msg).unwrap();
+            let msg_clone = msg_string.clone();
+            println!("Received: {}", msg_clone);
             
 
             // GET RESPONSE STRING
             let response = ChatServer::handle_request(msg_string).to_owned();
 
             let rc_message = Rc::new(response);
+
+
+            // let the app handle the action
+            self.app.handle_server_message(token, msg_string);
+
+
             // Queue up a write for all connected clients.
             for c in self.conns.iter_mut() {
                 c.send_message(rc_message.clone())
@@ -219,9 +228,22 @@ impl<'b> ChatServer<'b> {
                         c.mark_reset();
                     });
             }
+            */
         }
 
         Ok(())
+    }
+
+    pub fn write_to_client_stream(&mut self, token: mio::Token, response: String) {
+        let mut c = self.find_connection_by_token(token);
+        /*
+        let resp_bytes = response.to_bytes();
+        c.send_message(resp_bytes.clone())
+            .unwrap_or_else(|e| {
+                println!("Failed to queue message for {:?}: {:?}", c.token, e);
+                c.mark_reset();
+            });
+            */
     }
 
     fn handle_request(request: &str) -> &[u8] {
@@ -249,28 +271,6 @@ impl<'b> ChatServer<'b> {
         }
         */
         unimplemented!();
-    }
-
-    pub fn add_chatroom(&mut self, chatroom_name: String, chatroom: &'b &ChatRoom<'b>) {
-        self.chatrooms.insert(chatroom_name, &chatroom);
-    }
-
-    pub fn remove_connectfour_client(&mut self, chatroom_name: String, client_id: Id) ->
-    Result<ActionStatus, ActionStatus> {
-        /*
-        if self.chatrooms.contains_key(&chatroom_name) {
-            let room = self.chatrooms.get_mut(&chatroom_name).unwrap();
-            room.remove(&client_id);
-            Ok(ActionStatus::OK)
-        } else {
-            Err(ActionStatus::Invalid)
-        }
-        */
-        unimplemented!();
-    }
-
-    pub fn remove_room(&mut self, chatroom_name: String) {
-        self.chatrooms.remove(&chatroom_name);
     }
 
     /// Find a connection in the slab using the given token.
