@@ -11,6 +11,8 @@ pub enum ConnectFourMType {
     Join,
     Update,
     Exit,
+    Confirm,
+    Reject,
 }
 
 impl ConnectFourMType {
@@ -52,6 +54,8 @@ impl fmt::Display for ConnectFourMType {
                 ConnectFourMType::Join => "JOIN",
                 ConnectFourMType::Update => "UPDATE",
                 ConnectFourMType::Exit => "EXIT",
+                ConnectFourMType::Reject => "REJECT",
+                ConnectFourMType::Confirm =>"CONFIRM"
             }
         )
     }
@@ -132,4 +136,21 @@ impl fmt::Display for ConnectFourMessagePayload {
     fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}|{}|{}",self.sender, self.m_type, self.content)
     }
+}
+
+
+#[cfg(test)]
+mod connect_four_message_tests {
+    use super::*;
+
+    #[test]
+    fn to_string_test() {
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_name() {
+        unimplemented!()
+    }
+
 }

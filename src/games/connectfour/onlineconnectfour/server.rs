@@ -29,6 +29,7 @@ impl ConnectFourServer {
                 Join =>   Ok(self.handle_join(&payload).into_iter().map(|m| m.to_string()).collect::<Vec<String>>()),
                 Update => Ok(self.handle_update(&payload).into_iter().map(|m| m.to_string()).collect::<Vec<String>>()),
                 Exit =>   Ok(self.handle_exit(&payload).into_iter().map(|m| m.to_string()).collect::<Vec<String>>()),
+                _ => unimplemented!(),
             }
         } else {
             Err("Invalid payload received")
@@ -78,34 +79,20 @@ impl ConnectFourServer {
     }
 
     fn handle_exit(&mut self, message : &ConnectFourMessagePayload) -> Vec<ConnectFourMessagePayload> {
-        unimplemented!();
-        // let _SERVER_ID = SERVER_ID.to_string();
-        // let player_id = message.sender().clone();
-        // let mut ret = vec![];
-        //
-        // match self.game.remove_player(&player_id) {
-        //     Ok(state) => {
-        //
-        //     },
-        //
-        //     Err(s) => {
-        //
-        //     },
-        // }
-        // if !self.game.is_playing(&player_id) {
-        //     ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "You are not a player in this game"));
-        // } else {
-        //
-        //     if let Ok(col) = message.content().parse::<usize>() {
-        //         match self.game.make_move(col) {
-        //             Ok(state) => { ret.push(ConnectFourMessagePayload::new(_SERVER_ID, Update, mcontent)); },
-        //             Err(s) => { ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again")); },
-        //         }
-        //     } else {
-        //         ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again"));
-        //     }
-        // }
-        //
-        // ret
+        let _SERVER_ID = SERVER_ID.to_string();
+        let player_id = message.sender().clone();
+        let mut ret = vec![];
+
+        match self.game.remove_player(&player_id) {
+            Ok(state) => {
+                // ret.push(ConnectFourMessagePayload::new(player_id, Exit, format!("{} has left the game", player_id)));
+            },
+
+            Err(s) => {
+                ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again"));
+            },
+        }
+
+        ret
     }
 }

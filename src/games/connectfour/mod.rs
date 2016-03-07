@@ -75,6 +75,25 @@ impl ConnectFour {
             Err("Game is full")
         }
     }
+
+    pub fn remove_player(&mut self, id : &String) -> GResult<&str> {
+        let plen = self.players.len();
+        let mut remove_ind = -1;
+
+        for ind in 0..plen {
+            if *self.players[plen].id() == *id {
+                remove_ind = ind as i32;
+                break;
+            }
+        }
+
+        if remove_ind >= 0 {
+            self.players.remove(remove_ind as usize);
+            Ok(GameState::Finished)
+        } else {
+            Err("Player not found in game")
+        }
+    }
 }
 
 
