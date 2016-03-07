@@ -1,5 +1,8 @@
 mod boggleboard;
+use self::boggleboard::*
+
 mod dictionary;
+use self::dictionary::*
 
 use std::ops::Index;
 use std::io::{self, Read, stdin};
@@ -8,8 +11,8 @@ use std::collections::HashMap;
 
 #[derive(PartialEq, Hash, Clone, Debug)]
 pub struct Boggle {
-    board: boggleboard::BoggleBoard,
-    dict: dictionary::Dictionary,
+    board: BoggleBoard,
+    dict: Dictionary,
     // score : HashMap<Player, usize>, // two-player game
     // valid_words : HashMap<String, bool>,
 }
