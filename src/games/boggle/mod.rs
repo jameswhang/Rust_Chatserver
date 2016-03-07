@@ -2,27 +2,14 @@ use std::ops::Index;
 use super::{Game, TurnBasedGame, Player, GameState};
 use std::collections::HashMap;
 
-#![allow(dead_code)]
+extern crate rand;
+use rand::Rng;
 
+#![allow(dead_code)]
 
 const NUM_ROWS : usize = 4;
 const NUM_COLS : usize = 4;
 
-#[derive(Clone, Debug, PartialEq)]
-struct BoggleBoard {
-    //a 4x4 board
-    spots : [[char; NUM_COLS] ; NUM_ROWS],
-}
-
-impl ConnectFourBoard {
-    fn new() -> ConnectFourBoard {
-        unimplemented!();
-
-        ConnectFourBoard {
-            spots : [['0' ; NUM_COLS] ; NUM_ROWS],
-        }
-    }
-}
 
 impl Index<(usize, usize)> for BoggleBoard {
     type Output = Option<Player>;
