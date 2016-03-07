@@ -9,9 +9,10 @@ use super::message::{MessageType, Message};
 use super::types::*;
 
 use std::io::prelude::*;
+use std::io;
 use std::net::TcpStream;
 use self::byteorder::{ByteOrder, BigEndian};
-use self::chrono::*;
+use self::chrono::{UTC};
 
 use super::chat_server::ChatServer;
 
@@ -29,7 +30,6 @@ pub enum ClientStatus {
 	InRoom,
 }
 
-use ClientStatus::*;
 
 // server client.
 pub struct ChatClient {
@@ -41,16 +41,17 @@ pub struct ChatClient {
 impl ChatClient {
     pub fn new(server_addr: SocketAddr) -> ChatClient {
 		let conn = TcpStream::connect(&server_addr).unwrap();
-		conn.set_read_timeout(Duration::from_millis(500));
+		conn.set_read_timeout(Some(Duration::from_millis(500)));
 
         ChatClient {
             stream: conn,
             id: "".to_string(),
+            state: ClientStatus::SelectingRoom,
         }
     }
 
     pub fn show_all_rooms(&mut self) {
-		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), Show, "".to_string());
+		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Show, "".to_string());
         self.send_msg(msg.to_string());
         let mut buf = [0u8; 1024];
 
@@ -64,12 +65,12 @@ impl ChatClient {
 		}
     }
 
-	pub fn start(&mut self) -> {
+	pub fn start(&mut self) {
 		self.set_id();
-		selfshow_all_rooms
+		self.show_all_rooms();
 
 		loop {
-			if self.state == InRoom {
+			if self.state == ClientStatus::InRoom {
 
 			}
 
@@ -99,13 +100,14 @@ impl ChatClient {
 
         match s_ref.take(msg_len).read(&mut r) {
             Ok(0) => {
-                println!("0 bytes read", );
+                println!("0 bytes read");
+                None
             },
             Ok(n) => {
                 println!("{} bytes read", n);
-
                 let s = str::from_utf8(&r[..]).unwrap();
                 println!("read = {}", s);
+                Some(s.to_string())
             },
             Err(e) => {
                 panic!("{}", e);
@@ -118,8 +120,12 @@ impl ChatClient {
 	fn set_id (&mut self) {
 		loop {
 			println!("Please type in your desired ID: ");
-			let id = stdin();
-			self.send_msg(id.to_string());
+            let id = &mut String::new();
+			let stdin = io::stdin();
+
+            stdin.read_line(id);
+
+			self.send_msg(id.clone());
 
 			//loop until they get a confirm connect back with their Id
 			loop {
