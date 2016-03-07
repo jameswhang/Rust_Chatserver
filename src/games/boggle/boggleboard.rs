@@ -122,7 +122,6 @@ impl BoggleBoard {
                     let idx = queue.pop().unwrap();
 
                     if idx.1 == word_len {
-                        // println!("Found word!!");
                         return true;
                     }
                     let neighbors = BoggleBoard::find_unvisited_neighbors(self, idx.0);
@@ -135,8 +134,6 @@ impl BoggleBoard {
                 }
             }
         }
-
-        // println!("Did not find word.");
         false
     }
 

@@ -7,7 +7,6 @@ use self::dictionary::*;
 use std::ops::Index;
 use std::io::{self, Read, stdin};
 use super::{Game, TurnBasedGame, Player, GameState};
-use std::collections::HashMap;
 
 #[derive(PartialEq, Hash, Clone, Debug)]
 pub struct Boggle {
@@ -57,7 +56,7 @@ impl Game for Boggle{
         }
     }
 
-    /// get ranking of player in game
+    // // get ranking of player in game
     // fn get_position(&self, player : Player) -> Option<usize> {
     //     match self.get_winner {
     //         Some(pl) if pl = player => Some(1),
