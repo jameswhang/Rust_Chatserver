@@ -12,8 +12,7 @@ use super::{Game, TurnBasedGame, Player, GameState};
 pub struct Boggle {
     board: BoggleBoard,
     dict: Dictionary,
-     // score : HashMap<Player, usize>, // two-player game
-    // valid_words : HashMap<String, bool>,
+    players : Vec<Player>,
 }
 
 impl Boggle {
@@ -21,6 +20,15 @@ impl Boggle {
         Boggle {
             board: boggleboard::BoggleBoard::new(),
             dict : dictionary::Dictionary::initialize(),
+            players : vec![];
+        }
+    }
+
+    pub fn new_with_players(id1: &String, id2: &String) -> Boggle {
+        Boggle {
+            board: boggleboard::BoggleBoard::new(),
+            dict : dictionary::Dictionary::initialize(),
+            players : vec![Player::new(Human, id1.clone()), Player::new(Human, id2.clone())],
         }
     }
 
@@ -46,6 +54,7 @@ impl Game for Boggle{
     pub fn is_done(&self) -> bool {
         unimplemented!();
     }
+
 
     fn get_winner(&self) -> Option<Player> {
         if !self.is_done {
