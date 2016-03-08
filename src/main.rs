@@ -1,5 +1,6 @@
 extern crate chitchat;
 extern crate mio;
+extern crate games;
 
 mod chat;
 
@@ -7,6 +8,7 @@ use chitchat::chat::chat_server::{ChatServer};
 use chitchat::chat::chat_client::{ChatClient};
 use std::env;
 use std::net::{SocketAddr};
+
 
 use self::mio::EventLoop;
 use self::mio::tcp::*;
