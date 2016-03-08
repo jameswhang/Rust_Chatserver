@@ -37,7 +37,7 @@ impl ChatApp {
     }
 
     pub fn handle_server_message(&mut self, tok : Token, s : String) -> ServerResponse {
-        if let Some(cm) = Message::from_string(s, tok) {
+        if let Some(cm) = Message::from_string(&s) {
             match cm.message_type() {
                 // Grab an ID from the server
                 MessageType::Connect => { self.handle_connect(cm, tok) }
@@ -76,10 +76,10 @@ impl ChatApp {
             //new connection - new name
             if let Vacant(ci_entry) = self.conn_to_id.entry(tok) {
                 ic_entry.insert(tok);
-                ci_entry.insert(player_id);
+                ci_entry.insert(player_id.clone());
 
                 let mconfirm = Message::new(cm.id().clone(), UTC::now(),
-                            "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "".to_string());
+                            "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome {}", player_id));
 
                 ServerResponse::new(mconfirm)
             }
@@ -131,7 +131,7 @@ impl ChatApp {
         } else {
             // Shouldn't even be here unless a fake ID was generated somehow
             println!("WARNING: Unverified ID");
-            let mreject = Message::new(cm.id().clone(), UTC::now(), 
+            let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid),
                         "Unverified ID".to_string());
             ServerResponse::new(mreject)
@@ -162,7 +162,7 @@ impl ChatApp {
         } else {
             // Shouldn't even be here unless a fake ID was generated somehow
             println!("WARNING: Unverified ID");
-            let mreject = Message::new(cm.id().clone(), UTC::now(), 
+            let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid),
                         "Unverified ID".to_string());
             ServerResponse::new(mreject)
