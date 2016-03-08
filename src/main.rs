@@ -10,6 +10,7 @@ use chitchat::chat::chat_client::{ChatClient};
 use std::env;
 use std::net::{SocketAddr};
 
+use games::boggle::dictionary::Dictionary;
 
 use self::mio::EventLoop;
 use self::mio::tcp::*;

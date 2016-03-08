@@ -1,3 +1,5 @@
+use std::fmt;
+
 extern crate rand;
 use self::rand::distributions::{IndependentSample, Range};
 
@@ -66,17 +68,6 @@ impl BoggleBoard {
 
     fn reset_visits(&mut self) {
         self.visited = [[false; NUM_COLS]; NUM_ROWS];
-    }
-
-    pub fn display(self) {
-        // displays boggle board on screen
-        for row in 0..4 {
-            let mut line = "".to_string();
-            for col in 0..4 {
-                line = line + &self.spots[row][col] + " ";
-            }
-            println!("{}", line);
-        }
     }
 
     pub fn check_word(&mut self, word: &str) -> bool {
@@ -160,5 +151,21 @@ impl BoggleBoard {
             return true;
         }
         false
+    }
+}
+
+impl fmt::Display for BoggleBoard {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut p = "".to_string();
+
+        for row in 0..4 {
+            for col in 0..4 {
+                p = p + &self.spots[row][col] + " ";
+            }
+            p = p + "\n"
+        }
+
+        write!(f, "{}", p)
     }
 }

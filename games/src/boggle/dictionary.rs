@@ -12,7 +12,7 @@ impl Dictionary {
         // let mut dict = HashSet::<String>::new();
         let mut dict = vec![];
 
-        let f = File::open("src/WORD.LST").expect("Error opening word lexicon!");
+        let f = File::open("games/src/WORD.LST").expect("Error opening word lexicon!");
         let lines = BufReader::new(&f).lines();
 
         for line in lines {
