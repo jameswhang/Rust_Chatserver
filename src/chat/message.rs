@@ -44,13 +44,11 @@ impl MessageType {
         }
     }
 
-    fn from_string(s : &String) -> Option<MessageType> {
-        MessageType::from_str(&*s)
-    }
-
+    /*
     fn to_string(&self) -> String {
         format!("{}", self)
     }
+    */
 }
 
 impl fmt::Display for MessageType {
