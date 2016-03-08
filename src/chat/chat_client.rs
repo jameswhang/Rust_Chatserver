@@ -10,6 +10,7 @@ use super::message::{MessageType, Message};
 use super::message::MessageType::*;
 use super::types::*;
 
+use std::sync::mpsc::sync_channel;
 use std::io::prelude::*;
 use std::io;
 use std::net::TcpStream;
@@ -19,6 +20,7 @@ use self::games::connectfour::ConnectFourClient;
 
 use super::chat_server::ChatServer;
 
+use std::thread;
 use std::{mem, str};
 use std::io::Cursor;
 use std::net::SocketAddr;
@@ -235,7 +237,8 @@ impl ChatClient {
 				}
 			}
 		}
-	}
+    }
+
 
     pub fn send_msg(&mut self, msg: String) {
         let mut buf = [0u8; 8]; // Some complications exist with the interaction between
