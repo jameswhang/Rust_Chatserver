@@ -1,10 +1,11 @@
-mod boggleboard;
+pub mod boggleboard;
 use self::boggleboard::*;
 
-mod dictionary;
+pub mod dictionary;
 use self::dictionary::*;
 
 use std::ops::Index;
+use std::fmt;
 use std::io::{self, Read, stdin};
 use super::{Game, TurnBasedGame, Player, GameState, GResult, Id};
 use super::PlayerType::*;

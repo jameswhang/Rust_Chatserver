@@ -1,3 +1,5 @@
+use std::fmt;
+
 extern crate rand;
 use self::rand::distributions::{IndependentSample, Range};
 
@@ -155,7 +157,7 @@ impl BoggleBoard {
 impl fmt::Display for BoggleBoard {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut p = "";
+        let mut p = "".to_string();
 
         for row in 0..4 {
             for col in 0..4 {
