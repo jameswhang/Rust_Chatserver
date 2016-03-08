@@ -1,50 +1,49 @@
+extern crate games;
+
 use super::types::*;
 use super::message::Message;
 use super::message::MessageType::*;
 use super::chat_client::{ChatClient};
-//use super::super::games::connectfour::{ConnectFourServer};
+
+use self::games::connectfour::ConnectFourServer;
 use std::collections::HashSet;
 use std::io::{Write};
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct ChatRoom<T> {
+pub struct ChatRoom {
     name: Id,
     clients: Vec<Id>,
-    //game : ConnectFourServer,
-    handle : T,
+    game : ConnectFourServer,
 }
 
-impl<T : Write> ChatRoom<T> {
-    pub fn new(name: String, handle : T) -> ChatRoom<T> {
+impl ChatRoom {
+    pub fn new(name: String) -> ChatRoom {
         ChatRoom {
             name: name,
             clients: vec![],
-            //game : ConnectFourServer::new(),
-            handle : handle,
+            game : ConnectFourServer::new(),
         }
     }
 
-    pub fn handle_message(&mut self, cm : &Message) {
+    pub fn handle_message(&mut self, cm : &Message) -> (Vec<Id>, String) {
         if cm.message_type() != Action {
-
+            // Shouldn't be here
+            unreachable!();
         } else {
-            /*
-            match self.game.handle_message(cm.message()) {
+            match self.game.handle_message(cm.payload()) {
                 Ok(messages) => {
-                    for ref client in &self.clients {
-                        for ref message in &messages {
-                            // self.handle.write(&*message.clone().into_bytes().as_slice());
-                        }
+                    let mut result:String = String::new();
+                    for ref message in &messages {
+                        result = result.clone() + message.to_owned();
                     }
+                    (self.clients.clone(), result)
                 },
 
                 Err(s) => {
                     unimplemented!();
                 },
             }
-            */
-            unimplemented!();
         }
     }
 

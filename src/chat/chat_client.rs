@@ -25,7 +25,6 @@ use std::{mem, str};
 use std::io::Cursor;
 use std::net::SocketAddr;
 use std::time::Duration;
-use std::thread;
 use std::sync::mpsc::{Sender, Receiver, channel};
 
 
@@ -51,7 +50,6 @@ pub struct ChatClient {
 impl ChatClient {
     pub fn new(server_addr: SocketAddr) -> ChatClient {
 		let conn = TcpStream::connect(&server_addr).unwrap();
-		// conn.set_read_timeout(Some(Duration::from_millis(500)));
         ChatClient {
             stream: conn,
             id: "".to_string(),
