@@ -102,7 +102,7 @@ impl Message {
     }
 
     pub fn from_string(s : &String) -> Option<Message> {
-        let mut split : Vec<&str> = s.split('|').collect();
+        let mut split : Vec<&str> = s.split('=').collect();
 
         if split.len() != 6 {
             return None;
@@ -165,7 +165,7 @@ pub fn str_to_date(date : &str) -> ParseResult<DateTime<UTC>> {
 
 impl fmt::Display for Message {
     fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}|{}|{}|{}|{}|{}", self.message_id, self.date, self.sender, self.receiver, self.message_type, self.payload)
+        write!(f, "{}={}={}={}={}={}", self.message_id, self.date, self.sender, self.receiver, self.message_type, self.payload)
     }
 }
 
