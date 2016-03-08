@@ -1,5 +1,6 @@
 extern crate byteorder;
 extern crate chrono;
+extern crate games;
 
 #[doc="
 
@@ -14,6 +15,7 @@ use std::io;
 use std::net::TcpStream;
 use self::byteorder::{ByteOrder, BigEndian};
 use self::chrono::{UTC};
+use self::games::connectfour::ConnectFourClient;
 
 use super::chat_server::ChatServer;
 
@@ -36,18 +38,19 @@ pub enum ClientStatus {
 pub struct ChatClient {
     stream: TcpStream,
     pub id: Id,
-	state: ClientStatus
+	state: ClientStatus,
+	game : ConnectFourClient,
 }
 
 impl ChatClient {
     pub fn new(server_addr: SocketAddr) -> ChatClient {
 		let conn = TcpStream::connect(&server_addr).unwrap();
 		// conn.set_read_timeout(Some(Duration::from_millis(500)));
-
         ChatClient {
             stream: conn,
             id: "".to_string(),
             state: ClientStatus::SelectingRoom,
+			game: ConnectFourClient::new("".to_string()),
         }
     }
 
@@ -61,7 +64,7 @@ impl ChatClient {
 				},
 
 				ClientStatus::Action => {
-
+					;
 				},
 
 				ClientStatus::LeavingRoom => {
@@ -100,11 +103,36 @@ impl ChatClient {
 	}
 
 	fn handle_in_room(&mut self) {
+		self.stream.set_read_timeout(Duration::from_millis(500))
+		let mut
+
+		loop {
+			//handles use input
+			if let Some(user_input) = self.check_stdin() {
+				if let Ok(g_strs) = self.game.handle_input(user_input) {
+					//sends messages to the server to evaluate user action
+					for g_str in g_strs {
+						let chatmsg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Action, g_str.clone());
+						self.send_msg(chatmsg.to_string());
+					}
+				}
+			}
+
+			//Handles server messages
+			if let Some(server_message) = self.check_stream() {
+				if let Ok(g_strs) = self.game.handle_message(server_message) {
+					//let the user know what happened
+					for g_str in g_strs {
+						println!("{}", status);
+
+					}
+				}
+			}
+		}
+	}
+
+	fn check_stdin(&mut self) -> Option<String> {
 		unimplemented!();
-		// loop {
-		//
-		//
-		// }
 	}
 
 	pub fn select_room(&mut self) {
