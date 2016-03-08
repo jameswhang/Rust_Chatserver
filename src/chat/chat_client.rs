@@ -50,7 +50,7 @@ impl ChatClient {
             stream: conn,
             id: "".to_string(),
             state: ClientStatus::SelectingRoom,
-			game: ConnectFourClient::new("".to_string()),
+			game: ConnectFourClient::new(&"".to_string()),
         }
     }
 
@@ -103,13 +103,12 @@ impl ChatClient {
 	}
 
 	fn handle_in_room(&mut self) {
-		self.stream.set_read_timeout(Duration::from_millis(500))
-		let mut
+		// self.stream.set_read_timeout(Duration::from_millis(500));
 
 		loop {
 			//handles use input
 			if let Some(user_input) = self.check_stdin() {
-				if let Ok(g_strs) = self.game.handle_input(user_input) {
+				if let Ok(g_strs) = self.game.handle_input(&user_input) {
 					//sends messages to the server to evaluate user action
 					for g_str in g_strs {
 						let chatmsg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Action, g_str.clone());
@@ -120,11 +119,10 @@ impl ChatClient {
 
 			//Handles server messages
 			if let Some(server_message) = self.check_stream() {
-				if let Ok(g_strs) = self.game.handle_message(server_message) {
+				if let Ok(g_strs) = self.game.handle_message(&server_message) {
 					//let the user know what happened
 					for g_str in g_strs {
-						println!("{}", status);
-
+						println!("{}", g_str);
 					}
 				}
 			}
@@ -132,6 +130,10 @@ impl ChatClient {
 	}
 
 	fn check_stdin(&mut self) -> Option<String> {
+		unimplemented!();
+	}
+
+	fn check_stream(&mut self) -> Option<String> {
 		unimplemented!();
 	}
 
