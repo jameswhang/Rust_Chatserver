@@ -1,3 +1,24 @@
+#[doc="
+    @authors: Adel Lahlou, James Whang, Diane  Liu, Nevil George
+
+    This usage of our program from the commandline is usage: cargo run [mode] [server_ip]:[server_port],
+
+    As Server :
+
+    As Client :
+    - The provided IP:Port must be already running an instance of our program as a server
+
+    - The client will be taken through choosing an ID that is uniquely there's on that server.
+
+    - The client will then be presented with the list of rooms that they can choose from. The client
+    has to enter the name exactly as they see it. The server will then either confirm or deny their
+    entry into it. As it currently stands, there are no limits to who can be in the room and it allows
+    spectators.
+
+    - Once in the room, they can try to join the game by typing join. To leave the game, they type leave.
+    To make a move depends on the game. Currently, it only supports ConnectFour, where you only put in
+    the column number you want to make a move in.
+"]
 #![allow(dead_code)]
 extern crate chitchat;
 extern crate mio;
@@ -29,12 +50,6 @@ fn main(){
         let server_address = args[2].clone();
         let server: SocketAddr = server_address.parse().unwrap();
         start_client(server);
-        /*
-            Err(e) => {
-			    panic!("Invalid server address was provided. Use format server_ip:server_port");
-            }
-		}
-        */
 	} else {
 		panic!("usage: mode has to be either s for server, or c for client");
 	}
