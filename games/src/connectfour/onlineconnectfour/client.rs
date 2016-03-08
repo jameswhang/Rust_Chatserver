@@ -31,14 +31,16 @@ impl ConnectFourClient {
         }
     }
 
-    pub fn handle_message(&mut self, message : &String) {
+    pub fn handle_message(&mut self, message : &String) -> Result<Vec<String>, &str> {
         if let Some(payload) = ConnectFourMessagePayload::from_string(message) {
             match payload.m_type() {
-                Join =>   self.handle_join(&payload),
-                Update => self.handle_update(&payload),
-                Exit =>   self.handle_exit(&payload),
-                _ => {;},
+                Join =>   Ok(self.handle_join(&payload)),
+                Update => Ok(self.handle_update(&payload)),
+                Exit =>   Ok(self.handle_exit(&payload)),
+                _ => Ok(vec![]),
             }
+        } else {
+            Err("Message could not be read correctly")
         }
     }
 
@@ -72,38 +74,50 @@ impl ConnectFourClient {
         vec![ConnectFourMessagePayload::new(&self.id, Exit, s.clone()).to_string()]
     }
 
-    fn handle_join(&mut self, message : &ConnectFourMessagePayload){
+    fn handle_join(&mut self, message : &ConnectFourMessagePayload) -> Vec<String> {
         let _SERVER_ID = SERVER_ID.to_string();
         let player_id = message.sender().clone();
-
+        let mut ret = vec![];
 
         if player_id == _SERVER_ID {
-            if self.id == *message.sender() {
+            if self.id == *message.content() {
                 self.state = ClientState::Playing;
             }
 
             self.game.add_player(message.content());
+            ret.push(format!("{} has joined the game!", message.content()))
         }
+
+        ret
     }
 
-    fn handle_update(&mut self, message : &ConnectFourMessagePayload) {
+    fn handle_update(&mut self, message : &ConnectFourMessagePayload) -> Vec<String> {
         let _SERVER_ID = SERVER_ID.to_string();
         let player_id = message.sender().clone();
+        let mut ret = vec![];
 
         if player_id == _SERVER_ID {
             if let Ok(col) = message.content().parse::<usize>() {
-                self.game.make_move(col);
+                let curr_player = self.game.whos_turn();
+                let gstate = self.game.make_move(col).expect("server should only allow good moves");
+                ret.push(format!("{} selected column {}. Game is {}", curr_player, col, gstate));
             }
         }
+
+        ret
     }
 
-    pub fn handle_exit(&mut self, message : &ConnectFourMessagePayload) {
+    pub fn handle_exit(&mut self, message : &ConnectFourMessagePayload) -> Vec<String>{
         let _SERVER_ID = SERVER_ID.to_string();
         let player_id = message.sender().clone();
+        let mut ret = vec![];
 
         if player_id == _SERVER_ID {
             self.game.remove_player(&message.content());
+            ret.push(format!("{} has left the game", &message.content()));
         }
+
+        ret
     }
 
     pub fn game(&self) -> &ConnectFour {
