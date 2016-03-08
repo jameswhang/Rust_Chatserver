@@ -5,6 +5,7 @@ authors = ["adellahlou <alahlou@u.northwestern.edu", "jameswhang <sungyoonwhang2
 
 [dependencies]
 mio = "0.5"
+mioco = "*"
 chrono ="*"
 bytes="0.2.11"
 byteorder = "0.3"
