@@ -208,12 +208,14 @@ impl<'b> ChatServer {
             let msg = message.clone();
             let msg_string = str::from_utf8(&msg).unwrap();
             let handler_request = msg_string.clone().to_string();
-            
-            // get appropriate response from app
-            let mut resp = self.app.handle_server_message(token, handler_request);
 
-            for tok in resp.clients.iter() {
-                self.write_to_client_stream(*tok, resp.message.payload().clone());
+            // get appropriate response from app
+            let mut responses = self.app.handle_server_message(token, handler_request);
+
+            for resp in responses {
+                for tok in resp.clients.iter() {
+                    self.write_to_client_stream(*tok, resp.message().clone());
+                }
             }
         }
 

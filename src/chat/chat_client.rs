@@ -79,7 +79,6 @@ impl ChatClient {
 				},
 
 				ClientStatus::SelectingRoom => {
-					println!("Retrieving rooms...");
 					self.select_room();
 					//should have entered another room
 				},
@@ -175,6 +174,7 @@ impl ChatClient {
 	}
 
 	pub fn select_room(&mut self) {
+		println!("Retrieving rooms...\n");
 		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Show, "".to_string());
 		self.send_msg(msg.to_string());
 		let mut buf = [0u8; 2048];
@@ -187,8 +187,11 @@ impl ChatClient {
 					MessageType::Show => {
 						//print out list of rooms
 						let mut counter = 1;
+						let mut rooms : Vec<String> = vec![];
 						for room in message.payload().lines() {
 							println!("{}) {}", counter, room);
+							rooms.push(room.to_string());
+							counter = counter + 1;
 						}
 
 						//have user select room
@@ -196,31 +199,27 @@ impl ChatClient {
 						let mut room_choice = String::new();
 						let stdin = io::stdin();
 						stdin.read_line(&mut room_choice);
-						room_choice = room_choice.trim().to_lowercase();
 
 						loop {
-							//check if it's in local list
-							if let Some(roomname) = message.payload().lines().find(|&x| x == &*room_choice) {
-								//send a message to join it
-								let req = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Join, roomname.to_string());
-								self.send_msg(req.to_string());
+							//send a message to join it
+							let req = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Join, room_choice.to_string());
+							self.send_msg(req.to_string());
 
-								if let Some(response_str) = self.read_msg() {
-									if let Some(response) = Message::from_string(&response_str) {
-										//check if the server confirms the join
-										if response.message_type() == MessageType::Confirm("BADMID".to_string()) {
-											println!("Room join confirmed - {}", response.payload());
-											self.state = ClientStatus::InRoom;
-											break;
-										}
+							if let Some(response_str) = self.read_msg() {
+								if let Some(response) = Message::from_string(&response_str) {
+									//check if the server confirms the join
+									if response.message_type() == MessageType::Confirm("BADMID".to_string()) {
+										println!("Room join confirmed - {}", response.payload());
+										self.state = ClientStatus::InRoom;
+										break;
+									} else {
+										println!("That room was not found. Please enter a valid room:");
 									}
 								}
-							} else {
-								println!("That room was not found. Please enter a valid room:");
 							}
 
 							stdin.read_line(&mut room_choice);
-							room_choice = room_choice.trim().to_lowercase();
+							room_choice = room_choice.trim().to_string();
 						}
 					},
 
@@ -252,18 +251,18 @@ impl ChatClient {
         self.stream.read(&mut buf).unwrap();
 
         let msg_len = BigEndian::read_u64(&mut buf);
-        println!("Reading message length of {}",  msg_len);
+        println!("R /eading message length of {}",  msg_len);
 
         let mut r = [0u8; 256];
         let s_ref = <TcpStream as Read>::by_ref(&mut self.stream);
 
         match s_ref.take(msg_len).read(&mut r) {
             Ok(0) => {
-                println!("0 bytes read");
+                // println!("0 bytes read");
                 None
             },
             Ok(n) => {
-                println!("{} bytes read", n);
+                // println!("{} bytes read", n);
                 let s = str::from_utf8(&r[..]).unwrap();
                 println!("read = {}", s);
                 Some(s.to_string())
@@ -291,9 +290,10 @@ impl ChatClient {
 				if let Some(message) = Message::from_string(&raw_message) {
 					match message.message_type() {
 						MessageType::Confirm(_) => {
-							println!("{:?}", message.payload());
+							println!("{}", message.payload());
 							self.id = id.clone();
 							self.state = ClientStatus::SelectingRoom;
+							break;
 						},
 
 						MessageType::Reject(_) => {
@@ -304,7 +304,9 @@ impl ChatClient {
 							self.send_msg(req.to_string());
 						},
 
-						_ => {;},
+						_ => {
+							println!("{:?}", message.payload());
+						},
 					}
 				}
 			}

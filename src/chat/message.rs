@@ -37,8 +37,8 @@ impl MessageType {
                 }
 
                 match splits[0] {
-                    "CONFIRM" => Some(MessageType::Confirm(splits[2].to_string())),
-                    "REJECT" => Some(MessageType::Reject(splits[2].to_string())),
+                    "CONFIRM" => Some(MessageType::Confirm(splits[1].to_string())),
+                    "REJECT" => Some(MessageType::Reject(splits[1].to_string())),
                     _ => None,
                 }
             },
@@ -117,11 +117,15 @@ impl Message {
 
         if let Some(m_type) =  MessageType::from_str(m_type_raw) {
             if let Ok(utcdate) = str_to_date(date) {
-                return Some(Message::new(mid.to_string(), utcdate, sender.to_string(), receiver.to_string(), m_type, payload.to_string()));
+                return Some(Message::new(mid.trim().to_string(), utcdate, sender.trim().to_string(), receiver.trim().to_string(), m_type, payload.trim().to_string()));
             }
         }
 
         return None;
+    }
+
+    pub fn from_str(s : &str) -> Option<Message> {
+        Message::from_string(&s.to_string())
     }
 
     pub fn to_string(&self) -> String {
@@ -136,7 +140,7 @@ impl Message {
         &self.message_id
     }
 
-    pub fn date(&self) -> Time {
+    pub fn date(&self) -> DateTime<UTC> {
         self.date.clone()
     }
 
@@ -170,22 +174,23 @@ impl fmt::Display for Message {
 }
 
 /// Used for passing message between Server I/O and ServerApp
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ServerResponse {
     pub clients: Vec<mio::Token>, // vector of clients to receive the msg
-    pub message: Message, // msg to be written to the client
+    pub message: String, // msg to be written to the client
 }
 
 impl ServerResponse {
     pub fn new(msg: Message) -> ServerResponse {
         ServerResponse {
             clients: Vec::new(),
-            message: msg,
+            message: msg.to_string(),
         }
     }
     pub fn new_with_toks(msg: Message, toks : Vec<Token>) -> ServerResponse {
         ServerResponse {
             clients: toks,
-            message: msg,
+            message: msg.to_string(),
         }
     }
 
@@ -193,12 +198,12 @@ impl ServerResponse {
         self.clients.push(token.clone());
     }
 
-    pub fn clients(self) -> Vec<mio::Token> {
-        self.clients
+    pub fn clients(&self) -> Vec<mio::Token> {
+        self.clients.clone()
     }
 
-    pub fn message(self) -> Message {
-        self.message
+    pub fn message(&self) -> &String {
+        &self.message
     }
 }
 

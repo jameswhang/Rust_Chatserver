@@ -28,17 +28,22 @@ pub struct ChatApp {
 
 impl ChatApp {
     pub fn new() -> ChatApp {
+        let mut rooms = HashMap::new();
+        rooms.insert("RustLang".to_string(), ChatRoom::new());
+
         ChatApp {
             conn_to_id : HashMap::new(),
             id_to_conn : HashMap::new(),
-            id_to_room : HashMap::new(),
+            id_to_room : rooms,
             userid_to_room : HashMap::new(),
         }
     }
 
-    pub fn handle_server_message(&mut self, tok : Token, s : String) -> ServerResponse {
+    pub fn handle_server_message(&mut self, tok : Token, s : String) -> Vec<ServerResponse> {
         println!("Handling server message: {}", s);
-        if let Some(cm) = Message::from_string(&s) {
+        if let Some(dm) = Message::from_str(s.trim()) {
+            let cm = Message::new(dm.id().trim().to_string(), dm.date(), dm.sender().trim().to_string(),
+                                    dm.receiver().trim().to_string(), dm.message_type(), dm.payload().trim().to_string());
             let ret =
             match cm.message_type() {
                 // Grab an ID from the server
@@ -72,24 +77,55 @@ impl ChatApp {
                 },
 
                 _ => {
+
+                    let mreject = Message::new(cm.id().clone(), UTC::now(),
+                                "SERVER".to_string(), cm.sender().clone(), Reject(cm.id().clone()), "Please leave your room first".to_string());
+                    vec![ServerResponse::new_with_toks(mreject, vec![tok])]
                     //It's either a confirm or reject
-                    unimplemented!();
                 },
             };
 
-            println!("{}", ret);
+            println!("{:?}", ret);
             return ret;
         } else {
             unimplemented!();
         }
     }
 
-    fn handle_show(&mut self, cm : Message, tok : Token) -> ServerResponse  {
-        unimplemented!();
+    fn handle_show(&mut self, cm : Message, tok : Token) -> Vec<ServerResponse>  {
+        let player_id = cm.sender().trim().to_string();
+        let mid = cm.id().clone();
+
+        if self.verify_id(&player_id, tok) {
+            match self.userid_to_room.entry(player_id.clone()) {
+                //already part of a room, ask them to leave it
+                Occupied(_) => {
+                    let mreject = Message::new(cm.id().clone(), UTC::now(),
+                                "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Please leave your room first".to_string());
+                    vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+                },
+
+                //user is free to join any room they wnat
+                Vacant(_) => {
+                    let room_names  = self.id_to_room.keys().fold("".to_string(), |acc, ref x| format!("{}\n{}", acc, x));
+                    println!("room_names{:?}", room_names );
+                    let mconfirm = Message::new(cm.id().clone(), UTC::now(),
+                                "SERVER".to_string(), cm.sender().clone(), Show, room_names);
+                    vec![ServerResponse::new_with_toks(mconfirm, vec![tok])]
+                }
+            }
+        } else {
+            // Shouldn't even be here unless a fake ID was generated somehow
+            println!("WARNING: Unverified ID");
+            let mreject = Message::new(cm.id().clone(), UTC::now(),
+                        "SERVER".to_string(), cm.sender().clone(), Reject(mid),
+                        "Unverified ID".to_string());
+            vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+        }
     }
 
-    fn handle_connect(&mut self, cm : Message, tok : Token) -> ServerResponse {
-        let player_id = cm.payload().clone();
+    fn handle_connect(&mut self, cm : Message, tok : Token) -> Vec<ServerResponse> {
+        let player_id = cm.payload().trim().to_string();
         let mid = cm.id().clone();
 
         if let Vacant(ic_entry) = self.id_to_conn.entry(player_id.clone()) {
@@ -99,9 +135,9 @@ impl ChatApp {
                 ci_entry.insert(player_id.clone());
 
                 let mconfirm = Message::new(cm.id().clone(), UTC::now(),
-                            "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome {}", player_id));
+                            "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome {:?}", player_id));
 
-                ServerResponse::new_with_toks(mconfirm, vec![tok])
+                vec![ServerResponse::new_with_toks(mconfirm, vec![tok])]
             }
 
             //old connection wants new name
@@ -116,12 +152,12 @@ impl ChatApp {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Requested ID is already taken".to_string());
 
-            return ServerResponse::new_with_toks(mreject, vec![tok]);
+            return vec![ServerResponse::new_with_toks(mreject, vec![tok])];
         }
     }
 
-    fn handle_join(&mut self, cm : Message, tok : Token) -> ServerResponse {
-        let player_id = cm.sender().clone();
+    fn handle_join(&mut self, cm : Message, tok : Token) -> Vec<ServerResponse> {
+        let player_id = cm.sender().trim().to_string();
         let mid = cm.id().clone();
 
         if self.verify_id(&player_id, tok) {
@@ -130,21 +166,24 @@ impl ChatApp {
                 Occupied(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Please leave your room first".to_string());
-                    ServerResponse::new_with_toks(mreject, vec![tok])
+                    vec![ServerResponse::new_with_toks(mreject, vec![tok])]
                 },
 
                 //user is free to join any room they wnat
                 Vacant(good_entry) => {
                     // room exists - go for it
-                    if self.id_to_room.contains_key(cm.payload()) {
-                        good_entry.insert(cm.payload().clone());
+                    // TODO// Add person to chat room
+                    let roomname = cm.payload().trim().to_string();
+
+                    if self.id_to_room.contains_key(&roomname) {
+                        good_entry.insert(roomname.clone());
                         let mconfirm = Message::new(cm.id().clone(), UTC::now(),
-                                    "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome to: {}", cm.payload()));
-                        ServerResponse::new_with_toks(mconfirm, vec![tok])
+                                    "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome to: {}", roomname.clone()));
+                        vec![ServerResponse::new_with_toks(mconfirm, vec![tok])]
                     } else {
                         let mreject = Message::new(cm.id().clone(), UTC::now(),
                                     "SERVER".to_string(), cm.sender().clone(), Reject(mid), "No room with that name found".to_string());
-                        ServerResponse::new_with_toks(mreject, vec![tok])
+                        vec![ServerResponse::new_with_toks(mreject, vec![tok])]
                     }
                 }
             }
@@ -154,21 +193,21 @@ impl ChatApp {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid),
                         "Unverified ID".to_string());
-            ServerResponse::new_with_toks(mreject, vec![tok])
+            vec![ServerResponse::new_with_toks(mreject, vec![tok])]
         }
     }
 
-    fn handle_leave(&mut self, cm : Message, tok : Token) -> ServerResponse {
-        let player_id = cm.sender().clone();
+    fn handle_leave(&mut self, cm : Message, tok : Token) -> Vec<ServerResponse> {
+        let player_id = cm.sender().trim().to_string();
         let mid = cm.id().clone();
 
         if self.verify_id(&player_id, tok) {
-            match self.id_to_room.entry(player_id) {
+            match self.userid_to_room.entry(player_id) {
                 //not in a room to leave from
                 Vacant(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
                         cm.sender().clone(), Reject(mid), "You are not currently in a room".to_string());
-                    ServerResponse::new_with_toks(mreject, vec![tok])
+                    vec![ServerResponse::new_with_toks(mreject, vec![tok])]
                 },
 
                 //user is in a room, make it blank
@@ -176,7 +215,7 @@ impl ChatApp {
                     good_entry.remove();
                     let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "You've left the room.".to_string());
-                    ServerResponse::new_with_toks(mconfirm, vec![tok])
+                    vec![ServerResponse::new_with_toks(mconfirm, vec![tok])]
                 }
             }
         } else {
@@ -185,14 +224,55 @@ impl ChatApp {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid),
                         "Unverified ID".to_string());
-            ServerResponse::new_with_toks(mreject, vec![tok])
+            vec![ServerResponse::new_with_toks(mreject, vec![tok])]
         }
     }
 
 
 
-    fn handle_action(&mut self, cm : Message, tok : Token) -> ServerResponse {
-        unimplemented!()
+    fn handle_action(&mut self, cm : Message, tok : Token) -> Vec<ServerResponse> {
+        unimplemented!();
+        // let player_id = cm.sender();
+        // let mid = cm.id().clone();
+        //
+        // if self.verify_id(&player_id, tok) {
+        //     match self.userid_to_room.get(player_id) {
+        //         //not in a room to leave from
+        //         None => {
+        //             let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
+        //                 cm.sender().clone(), Reject(mid), "You are not currently in a room".to_string());
+        //             vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+        //         },
+        //
+        //         //user is in a room
+        //         Some(chat_room_id) => {
+        //             if let Some(chat_room) = self.id_to_room.get(chat_room_id) {
+        //                 //pass up the action, receive the response
+        //                 let responses = chat_room.handle_message(cm.payload().clone());
+        //                 let mut ret = vec![];
+        //                 //send all the responses
+        //                 for response in responses {
+        //                     let mconfirm = Message::new(cm.id().clone(), UTC::now(),
+        //                                 "SERVER".to_string(), cm.sender().clone(), Confirm(mid), response);
+        //
+        //                     ret.push(ServerResponse::new_with_toks(mconfirm, chat_room.clients().clone()));
+        //                 }
+        //                 return ret;
+        //             } else {
+        //                 let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
+        //                     cm.sender().clone(), Reject(mid), "Couldn't find your room".to_string());
+        //                 vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+        //             }
+        //         }
+        //     }
+        // } else {
+        //     // Shouldn't even be here unless a fake ID was generated somehow
+        //     println!("WARNING: Unverified ID");
+        //     let mreject = Message::new(cm.id().clone(), UTC::now(),
+        //                 "SERVER".to_string(), cm.sender().clone(), Reject(mid),
+        //                 "Unverified ID".to_string());
+        //     vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+        // }
     }
 
 
