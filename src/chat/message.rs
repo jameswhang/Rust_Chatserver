@@ -65,8 +65,8 @@ impl fmt::Display for MessageType {
             MessageType::Chat => { s = "CHAT".to_string() },
             MessageType::Show => { s = "SHOW".to_string() },
             MessageType::Leave => { s = "LEAVE".to_string() },
-            MessageType::Reject(ref id) =>  { s = ("REJECT:".to_string() + &*id) },
-            MessageType::Confirm(ref id) => { s = ("CONFIRM:".to_string() + &*id) },
+            MessageType::Reject(ref id) =>  { s = "REJECT:".to_string() + &*id },
+            MessageType::Confirm(ref id) => { s = "CONFIRM:".to_string() + &*id },
         }
 
         write!(f, "{}", s)

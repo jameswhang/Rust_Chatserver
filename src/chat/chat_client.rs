@@ -6,6 +6,7 @@ extern crate chrono;
 "]
 
 use super::message::{MessageType, Message};
+use super::message::MessageType::*;
 use super::types::*;
 
 use std::io::prelude::*;
@@ -24,7 +25,7 @@ use std::time::Duration;
 
 #[derive(Debug, PartialEq)]
 pub enum ClientStatus {
-	SelectingAction,
+	Action,
 	SelectingRoom,
     LeavingRoom,
 	InRoom,
@@ -41,7 +42,7 @@ pub struct ChatClient {
 impl ChatClient {
     pub fn new(server_addr: SocketAddr) -> ChatClient {
 		let conn = TcpStream::connect(&server_addr).unwrap();
-		conn.set_read_timeout(Some(Duration::from_millis(500)));
+		// conn.set_read_timeout(Some(Duration::from_millis(500)));
 
         ChatClient {
             stream: conn,
@@ -50,16 +51,64 @@ impl ChatClient {
         }
     }
 
-    pub fn show_all_rooms(&mut self) {
+    pub fn select_room(&mut self) {
 		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Show, "".to_string());
         self.send_msg(msg.to_string());
-        let mut buf = [0u8; 1024];
+        let mut buf = [0u8; 2048];
 
-		//have to loop and block since it has a timeout
-		loop {
-			if let Ok(size) = self.stream.read(&mut buf) {
-				if size > 0 {
-					break;
+		if let Some(raw_message) = self.read_msg() {
+			if let Some(message) = Message::from_string(&raw_message) {
+
+				//have the message, make sure it has to do with rooms
+				match message.message_type() {
+					MessageType::Show => {
+						//print out list of rooms
+						let mut counter = 1;
+						for room in message.payload().lines() {
+							println!("{}) {}", counter, room);
+						}
+
+						//have user select room
+						println!("\nType in desired room name from list:");
+						let mut room_choice = String::new();
+						let stdin = io::stdin();
+						stdin.read_line(&mut room_choice);
+						room_choice = room_choice.trim().to_lowercase();
+
+						loop {
+							//check if it's in local list
+							if let Some(roomname) = message.payload().lines().find(|&x| x == &*room_choice) {
+								//send a message to join it
+								let req = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Join, roomname.to_string());
+								self.send_msg(req.to_string());
+
+								if let Some(response_str) = self.read_msg() {
+									if let Some(response) = Message::from_string(&response_str) {
+										//check if the server confirms the join
+										if response.message_type() == MessageType::Confirm("BADMID".to_string()) {
+											println!("Room join confirmed - {}", response.payload());
+											self.state = ClientStatus::InRoom;
+											break;
+										}
+									}
+								}
+							} else {
+								println!("That room was not found. Please enter a valid room:");
+							}
+
+							stdin.read_line(&mut room_choice);
+							room_choice = room_choice.trim().to_lowercase();
+						}
+					},
+
+					//assume that we are not allowed to look at the rooms currently
+					//meaning we need to exit first to see rooms
+					MessageType::Reject(_) => {
+						println!("{:?}", message.payload());
+						self.state = ClientStatus::InRoom;
+					},
+
+					_ => {;},
 				}
 			}
 		}
@@ -67,15 +116,33 @@ impl ChatClient {
 
 	pub fn start(&mut self) {
 		self.set_id();
-		self.show_all_rooms();
 
 		loop {
-			if self.state == ClientStatus::InRoom {
+			match self.state {
+				ClientStatus::InRoom => {
 
+				},
+
+				ClientStatus::Action => {
+
+				},
+
+				ClientStatus::LeavingRoom => {
+
+				},
+
+				ClientStatus::SelectingRoom => {
+					println!("Retrieving rooms...");
+					self.select_room();
+				},
 			}
-
-
 		}
+	}
+
+
+
+	fn handle_in_room(&mut self) {
+		unimplemented!();
 	}
 
     pub fn send_msg(&mut self, msg: String) {
@@ -113,25 +180,47 @@ impl ChatClient {
                 panic!("{}", e);
             }
         }
-
-
 	}
 
+
+
 	fn set_id (&mut self) {
+		println!("Please type in your desired ID: ");
+	    let id = &mut String::new();
+		let stdin = io::stdin();
+
+		stdin.read_line(id);
+		let req = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Connect, id.clone());
+		self.send_msg(req.to_string());
+
+		//loop until they get a confirm connect back with their Id
 		loop {
-			println!("Please type in your desired ID: ");
-            let id = &mut String::new();
-			let stdin = io::stdin();
+			if let Some(raw_message) = self.read_msg() {
+				if let Some(message) = Message::from_string(&raw_message) {
+					match message.message_type() {
+						MessageType::Confirm(_) => {
+							println!("{:?}", message.payload());
+							self.id = id.clone();
+							self.state = ClientStatus::SelectingRoom;
+						},
 
-            stdin.read_line(id);
+						MessageType::Reject(_) => {
+							println!("{:?}", message.payload());
+							println!("Input a different ID: ");
+							stdin.read_line(id);
+							let req = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Connect, id.clone());
+							self.send_msg(req.to_string());
+						},
 
-			self.send_msg(id.clone());
-
-			//loop until they get a confirm connect back with their Id
-			loop {
-
+						_ => {;},
+					}
+				}
 			}
 		}
+	}
+
+	fn gen_message(&self, m_type : MessageType, content : &String) -> Message {
+		Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), m_type, content.clone())
 	}
 
     fn select_game() {
