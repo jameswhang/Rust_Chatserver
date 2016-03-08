@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -9,7 +8,6 @@ pub struct Dictionary {
 
 impl Dictionary {
     pub fn initialize() -> Dictionary {
-        // let mut dict = HashSet::<String>::new();
         let mut dict = vec![];
 
         let f = File::open("games/src/WORD.LST").expect("Error opening word lexicon!");
