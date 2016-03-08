@@ -51,10 +51,66 @@ impl ChatClient {
         }
     }
 
-    pub fn select_room(&mut self) {
+	pub fn start(&mut self) {
+		self.set_id();
+
+		loop {
+			match self.state {
+				ClientStatus::InRoom => {
+					self.handle_in_room();
+				},
+
+				ClientStatus::Action => {
+
+				},
+
+				ClientStatus::LeavingRoom => {
+					self.handle_leave();
+				},
+
+				ClientStatus::SelectingRoom => {
+					println!("Retrieving rooms...");
+					self.select_room();
+				},
+			}
+		}
+	}
+
+	fn handle_leave(&mut self) {
+		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Leave, "".to_string());
+		self.send_msg(msg.to_string());
+
+		if let Some(raw_message) = self.read_msg() {
+			if let Some(message) = Message::from_string(&raw_message) {
+				match message.message_type() {
+					MessageType::Confirm(_) => {
+						println!("{:?}", message.payload());
+						self.state = ClientStatus::SelectingRoom;
+					},
+
+					MessageType::Reject(_) => {
+						println!("{:?}", message.payload());
+						self.state = ClientStatus::SelectingRoom;
+					},
+
+					_ => {;}
+				}
+			}
+		}
+	}
+
+	fn handle_in_room(&mut self) {
+		unimplemented!();
+		// loop {
+		//
+		//
+		// }
+	}
+
+	pub fn select_room(&mut self) {
 		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Show, "".to_string());
-        self.send_msg(msg.to_string());
-        let mut buf = [0u8; 2048];
+		self.send_msg(msg.to_string());
+		let mut buf = [0u8; 2048];
 
 		if let Some(raw_message) = self.read_msg() {
 			if let Some(message) = Message::from_string(&raw_message) {
@@ -112,37 +168,6 @@ impl ChatClient {
 				}
 			}
 		}
-    }
-
-	pub fn start(&mut self) {
-		self.set_id();
-
-		loop {
-			match self.state {
-				ClientStatus::InRoom => {
-
-				},
-
-				ClientStatus::Action => {
-
-				},
-
-				ClientStatus::LeavingRoom => {
-
-				},
-
-				ClientStatus::SelectingRoom => {
-					println!("Retrieving rooms...");
-					self.select_room();
-				},
-			}
-		}
-	}
-
-
-
-	fn handle_in_room(&mut self) {
-		unimplemented!();
 	}
 
     pub fn send_msg(&mut self, msg: String) {
@@ -222,8 +247,4 @@ impl ChatClient {
 	fn gen_message(&self, m_type : MessageType, content : &String) -> Message {
 		Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), m_type, content.clone())
 	}
-
-    fn select_game() {
-        unimplemented!();
-    }
 }

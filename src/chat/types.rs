@@ -2,7 +2,6 @@ extern crate chrono;
 
 use std::collections::HashMap;
 use super::chat_client::{ChatClient};
-use super::chat_room::*;
 use self::chrono::*;
 
 
