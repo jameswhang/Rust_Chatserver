@@ -26,18 +26,14 @@ impl ChatRoom {
         }
     }
 
-    pub fn handle_message(&mut self, cm : &Message) -> (Vec<Id>, String) {
+    pub fn handle_message(&mut self, cm : &Message) -> Result<Vec<String>, &str> {
         if cm.message_type() != Action {
             // Shouldn't be here
             unreachable!();
         } else {
             match self.game.handle_message(cm.payload()) {
                 Ok(messages) => {
-                    let mut result:String = String::new();
-                    for ref message in &messages {
-                        result = result.clone() + message.to_owned();
-                    }
-                    (self.clients.clone(), result)
+                    Ok(messages)
                 },
 
                 Err(s) => {
