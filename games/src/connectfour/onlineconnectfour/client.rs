@@ -1,7 +1,7 @@
 use std::fmt;
 use super::message::*;
 use super::message::ConnectFourMType::*;
-use super::super::{ConnectFour, Game, TurnBasedGame};
+use super::super::{ConnectFour, TurnBasedGame};
 
 
 const SERVER_ID : &'static str= "SERVER";

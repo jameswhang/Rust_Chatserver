@@ -1,4 +1,3 @@
-use std::fmt;
 use super::message::*;
 use super::message::ConnectFourMType::*;
 use super::super::{ConnectFour, Game, TurnBasedGame};
@@ -35,17 +34,17 @@ impl ConnectFourServer {
     }
 
     fn handle_join(&mut self, message : &ConnectFourMessagePayload) -> Vec<ConnectFourMessagePayload> {
-        let _SERVER_ID = SERVER_ID.to_string();
+        let _server_id = SERVER_ID.to_string();
         let mcontent = message.content().clone();
         let mut ret = vec![];
 
         match self.game.add_player(message.content()) {
             Ok(state) => {
-                ret.push(ConnectFourMessagePayload::new(&_SERVER_ID, Join, mcontent));
-                ret.push(ConnectFourMessagePayload::new(&_SERVER_ID, Update, state.to_string()));
+                ret.push(ConnectFourMessagePayload::new(&_server_id, Join, mcontent));
+                ret.push(ConnectFourMessagePayload::new(&_server_id, Update, state.to_string()));
             },
-            Err(s) => {
-                ret.push(ConnectFourMessagePayload::new(&_SERVER_ID, Update, format!("{} failed to join", mcontent)))
+            Err(_) => {
+                ret.push(ConnectFourMessagePayload::new(&_server_id, Update, format!("{} failed to join", mcontent)))
             }
         }
 
@@ -53,7 +52,7 @@ impl ConnectFourServer {
     }
 
     fn handle_update(&mut self, message : &ConnectFourMessagePayload) -> Vec<ConnectFourMessagePayload> {
-        let _SERVER_ID = SERVER_ID.to_string();
+        let _server_id = SERVER_ID.to_string();
         let player_id = message.sender().clone();
         let mcontent = message.content().clone();
         let mut ret = vec![];
@@ -66,8 +65,8 @@ impl ConnectFourServer {
         } else {
             if let Ok(col) = message.content().parse::<usize>() {
                 match self.game.make_move(col) {
-                    Ok(state) => { ret.push(ConnectFourMessagePayload::new(&_SERVER_ID, Update, mcontent)); },
-                    Err(s) => { ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again")); },
+                    Ok(_) => { ret.push(ConnectFourMessagePayload::new(&_server_id, Update, mcontent)); },
+                    Err(_) => { ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again")); },
                 }
             } else {
                 ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again"));
@@ -78,16 +77,16 @@ impl ConnectFourServer {
     }
 
     pub fn handle_exit(&mut self, message : &ConnectFourMessagePayload) -> Vec<ConnectFourMessagePayload> {
-        let _SERVER_ID = SERVER_ID.to_string();
+        let _server_id = SERVER_ID.to_string();
         let player_id = message.sender().clone();
         let mut ret = vec![];
 
         match self.game.remove_player(&player_id) {
-            Ok(state) => {
-                ret.push(ConnectFourMessagePayload::new(&_SERVER_ID, Exit, player_id));
+            Ok(_) => {
+                ret.push(ConnectFourMessagePayload::new(&_server_id, Exit, player_id));
             },
 
-            Err(s) => {
+            Err(_) => {
                 ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Player not in game"));
             },
         }
