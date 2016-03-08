@@ -106,6 +106,12 @@ impl Message {
     }
 }
 
+pub fn str_to_date(date : &str) -> ParseResult<DateTime<UTC>> {
+    let mut time = date.to_string();
+    time.truncate(26);
+    UTC.datetime_from_str(&*time, "%Y-%m-%d %H:%M:%S.%f")
+}
+
 /// Used for passing message between Server I/O and ServerApp
 pub struct ServerResponse {
     pub clients: Vec<mio::Token>, // vector of clients to receive the msg
@@ -127,7 +133,7 @@ impl ServerResponse {
     pub fn clients(self) -> Vec<mio::Token> {
         self.clients
     }
-    
+
     pub fn message(self) -> Message {
         self.message
     }
