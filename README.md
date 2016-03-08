@@ -1,5 +1,5 @@
 # Rust Chatserver
-A non-blocking chatserver written in Rust that implements Connect4 and Boggle games.
+A non-blocking chatserver written in Rust that implements Connect4 games.
 
 ## Contributors
 Adel Lahlou, Diane Liu, James Whang, Nevil George
