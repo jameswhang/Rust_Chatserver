@@ -5,7 +5,6 @@ pub mod dictionary;
 use self::dictionary::*;
 
 use std::fmt;
-use std::io::{Read};
 use super::{Player};
 use super::PlayerType::*;
 

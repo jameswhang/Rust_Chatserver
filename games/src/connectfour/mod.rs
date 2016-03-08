@@ -5,8 +5,6 @@ pub mod onlineconnectfour;
 pub use self::onlineconnectfour::{ConnectFourServer, ConnectFourClient};
 // mod test;
 
-use std::ops::Index;
-use std::collections::HashMap;
 use std::fmt;
 
 pub use super::{Game, TurnBasedGame, Player, GameState, GResult, GResultChat, MultiIndex, Id};

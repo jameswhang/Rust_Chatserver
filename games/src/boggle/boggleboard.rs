@@ -76,7 +76,7 @@ impl BoggleBoard {
         let word_len = word.len();
         let mut word_iter = word.chars();
         if word_len > 0 {
-            for i in 0..word.len() {
+            for _ in 0..word.len() {
                 &word_vec.push(word_iter.next().unwrap().to_string().to_uppercase());
             }
         } else {
@@ -85,7 +85,7 @@ impl BoggleBoard {
         }
 
         // see if first letter exists in grid
-        let mut first_letter = word_vec[0].clone();
+        let first_letter = word_vec[0].clone();
         let mut first_letter_matches = vec![];
         for row in 0..4 {
             for col in 0..4 {
