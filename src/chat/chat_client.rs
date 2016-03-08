@@ -10,6 +10,7 @@ use super::message::{MessageType, Message};
 use super::message::MessageType::*;
 use super::types::*;
 
+use std::sync::mpsc::sync_channel;
 use std::io::prelude::*;
 use std::io;
 use std::net::TcpStream;
@@ -19,11 +20,11 @@ use self::games::connectfour::ConnectFourClient;
 
 use super::chat_server::ChatServer;
 
+use std::thread;
 use std::{mem, str};
 use std::io::Cursor;
 use std::net::SocketAddr;
 use std::time::Duration;
-use std::thread;
 use std::sync::mpsc::{Sender, Receiver, channel};
 
 
@@ -49,7 +50,6 @@ pub struct ChatClient {
 impl ChatClient {
     pub fn new(server_addr: SocketAddr) -> ChatClient {
 		let conn = TcpStream::connect(&server_addr).unwrap();
-		// conn.set_read_timeout(Some(Duration::from_millis(500)));
         ChatClient {
             stream: conn,
             id: "".to_string(),
@@ -234,7 +234,8 @@ impl ChatClient {
 				}
 			}
 		}
-	}
+    }
+
 
     pub fn send_msg(&mut self, msg: String) {
         let mut buf = [0u8; 8]; // Some complications exist with the interaction between
