@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 extern crate chitchat;
 extern crate mio;
 extern crate games;
@@ -41,9 +42,6 @@ fn main(){
 
 fn start_client(server_address : SocketAddr) {
 	let mut client = ChatClient::new(server_address);
-
-    while(true) {
-    }
 }
 
 
