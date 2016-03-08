@@ -10,7 +10,6 @@ use super::message::{MessageType, Message};
 use super::message::MessageType::*;
 use super::types::*;
 
-use std::sync::mpsc::sync_channel;
 use std::io::prelude::*;
 use std::io;
 use std::net::TcpStream;
@@ -18,13 +17,9 @@ use self::byteorder::{ByteOrder, BigEndian};
 use self::chrono::{UTC};
 use self::games::connectfour::ConnectFourClient;
 
-use super::chat_server::ChatServer;
-
 use std::thread;
-use std::{mem, str};
-use std::io::Cursor;
+use std::str;
 use std::net::SocketAddr;
-use std::time::Duration;
 use std::sync::mpsc::{Sender, Receiver, channel};
 
 
@@ -177,8 +172,6 @@ impl ChatClient {
 		println!("Retrieving rooms...\n");
 		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Show, "".to_string());
 		self.send_msg(msg.to_string());
-		let mut buf = [0u8; 2048];
-
 		if let Some(raw_message) = self.read_msg() {
 			if let Some(message) = Message::from_string(&raw_message) {
 
@@ -198,7 +191,7 @@ impl ChatClient {
 						println!("\nType in desired room name from list:");
 						let mut room_choice = String::new();
 						let stdin = io::stdin();
-						stdin.read_line(&mut room_choice);
+						let _ = stdin.read_line(&mut room_choice);
 
 						loop {
 							//send a message to join it
@@ -218,7 +211,7 @@ impl ChatClient {
 								}
 							}
 
-							stdin.read_line(&mut room_choice);
+							let _ = stdin.read_line(&mut room_choice);
 							room_choice = room_choice.trim().to_string();
 						}
 					},
@@ -262,7 +255,7 @@ impl ChatClient {
                 // println!("0 bytes read");
                 None
             },
-            Ok(n) => {
+            Ok(_) => {
                 // println!("{} bytes read", n);
                 let s = str::from_utf8(&r[..]).unwrap();
                 println!("read = {}", s);
@@ -281,7 +274,7 @@ impl ChatClient {
 	    let id = &mut String::new();
 		let stdin = io::stdin();
 
-		stdin.read_line(id);
+		let _ = stdin.read_line(id);
 		let req = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Connect, id.clone());
 		self.send_msg(req.to_string());
 
@@ -300,7 +293,7 @@ impl ChatClient {
 						MessageType::Reject(_) => {
 							println!("{:?}", message.payload());
 							println!("Input a different ID: ");
-							stdin.read_line(id);
+							let _ = stdin.read_line(id);
 							let req = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Connect, id.clone());
 							self.send_msg(req.to_string());
 						},
@@ -316,17 +309,20 @@ impl ChatClient {
 
 
 
+    /* TODO: refactor to use this
 	fn gen_message(&self, m_type : MessageType, content : &String) -> Message {
 		Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), m_type, content.clone())
 	}
+    */
 }
+
 
 fn watch_stdin(tx : Sender<String>) {
 	let stdin = io::stdin();
 	let mut input = String::new();
 
 	loop {
-		stdin.read_line(&mut input);
+		let _ = stdin.read_line(&mut input);
 
 		if let Ok(_) = tx.send(input.clone()) {
 			input = "".to_string();

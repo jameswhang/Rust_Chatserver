@@ -1,7 +1,6 @@
 extern crate chrono;
 extern crate mio;
 
-use std::convert::AsRef;
 use std::fmt;
 
 use super::types::*;
@@ -45,13 +44,11 @@ impl MessageType {
         }
     }
 
-    fn from_string(s : &String) -> Option<MessageType> {
-        MessageType::from_str(&*s)
-    }
-
+    /*
     fn to_string(&self) -> String {
         format!("{}", self)
     }
+    */
 }
 
 impl fmt::Display for MessageType {
@@ -102,7 +99,7 @@ impl Message {
     }
 
     pub fn from_string(s : &String) -> Option<Message> {
-        let mut split : Vec<&str> = s.split('=').collect();
+        let split : Vec<&str> = s.split('=').collect();
 
         if split.len() != 6 {
             return None;

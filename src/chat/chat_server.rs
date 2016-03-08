@@ -10,11 +10,7 @@ use self::mio::tcp::*;
 use self::mio::util::Slab;
 
 use super::chat_connection::Connection;
-use super::chat_client::ChatClient;
 use super::chat_app::ChatApp;
-use super::chat_room::ChatRoom;
-use super::message::*;
-use super::types::*;
 
 pub struct ChatServer {
     sock: TcpListener,
@@ -210,7 +206,7 @@ impl<'b> ChatServer {
             let handler_request = msg_string.clone().to_string();
 
             // get appropriate response from app
-            let mut responses = self.app.handle_server_message(token, handler_request);
+            let responses = self.app.handle_server_message(token, handler_request);
 
             for resp in responses {
                 for tok in resp.clients.iter() {
