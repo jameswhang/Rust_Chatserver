@@ -1,0 +1,7 @@
+[package]
+name = "games"
+version = "0.1.0"
+authors = ["Diane Liu <dianeliu@u.northwestern.edu>"]
+
+[dependencies]
+rand = "0.3.14"
