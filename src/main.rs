@@ -42,6 +42,7 @@ fn main(){
 
 fn start_client(server_address : SocketAddr) {
 	let mut client = ChatClient::new(server_address);
+    client.start();
 }
 
 

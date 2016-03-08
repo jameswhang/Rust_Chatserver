@@ -182,6 +182,12 @@ impl ServerResponse {
             message: msg,
         }
     }
+    pub fn new_with_toks(msg: Message, toks : Vec<Token>) -> ServerResponse {
+        ServerResponse {
+            clients: toks,
+            message: msg,
+        }
+    }
 
     pub fn add_client(&mut self, token: mio::Token) {
         self.clients.push(token.clone());
@@ -193,5 +199,11 @@ impl ServerResponse {
 
     pub fn message(self) -> Message {
         self.message
+    }
+}
+
+impl fmt::Display for ServerResponse {
+    fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "clients: {:?}\nmessage: {}", self.clients, self.message)
     }
 }

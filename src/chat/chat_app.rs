@@ -37,28 +37,48 @@ impl ChatApp {
     }
 
     pub fn handle_server_message(&mut self, tok : Token, s : String) -> ServerResponse {
+        println!("Handling server message: {}", s);
         if let Some(cm) = Message::from_string(&s) {
+            let ret =
             match cm.message_type() {
                 // Grab an ID from the server
-                MessageType::Connect => { self.handle_connect(cm, tok) }
+                MessageType::Connect => {
+                    println!("Handling connect!");
+                    self.handle_connect(cm, tok)
+                },
 
                 // Show all the rooms available
-                MessageType::Show => { self.handle_show(cm, tok) }
+                MessageType::Show => {
+                    println!("Handling show!");
+                    self.handle_show(cm, tok)
+                },
 
                 // Join a room.
-            	Join =>  { self.handle_join(cm, tok) }
+            	Join =>  {
+                    println!("Handling join!");
+                    self.handle_join(cm, tok)
+                },
 
                 // Leave a room
-            	Leave =>  { self.handle_leave(cm, tok) }
+            	Leave =>  {
+                    println!("Handling leave!");
+                    self.handle_leave(cm, tok)
+                },
 
                 // Action
-            	Action => { self.handle_action(cm, tok) }
+            	Action => {
+                    println!("Handling action!");
+                    self.handle_action(cm, tok)
+                },
 
                 _ => {
                     //It's either a confirm or reject
                     unimplemented!();
                 },
-            }
+            };
+
+            println!("{}", ret);
+            return ret;
         } else {
             unimplemented!();
         }
@@ -81,7 +101,7 @@ impl ChatApp {
                 let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                             "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome {}", player_id));
 
-                ServerResponse::new(mconfirm)
+                ServerResponse::new_with_toks(mconfirm, vec![tok])
             }
 
             //old connection wants new name
@@ -96,7 +116,7 @@ impl ChatApp {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Requested ID is already taken".to_string());
 
-            return ServerResponse::new(mreject)
+            return ServerResponse::new_with_toks(mreject, vec![tok]);
         }
     }
 
@@ -110,7 +130,7 @@ impl ChatApp {
                 Occupied(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Reject(mid), "Please leave your room first".to_string());
-                    ServerResponse::new(mreject)
+                    ServerResponse::new_with_toks(mreject, vec![tok])
                 },
 
                 //user is free to join any room they wnat
@@ -120,11 +140,11 @@ impl ChatApp {
                         good_entry.insert(cm.payload().clone());
                         let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                                     "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome to: {}", cm.payload()));
-                        ServerResponse::new(mconfirm)
+                        ServerResponse::new_with_toks(mconfirm, vec![tok])
                     } else {
                         let mreject = Message::new(cm.id().clone(), UTC::now(),
                                     "SERVER".to_string(), cm.sender().clone(), Reject(mid), "No room with that name found".to_string());
-                        ServerResponse::new(mreject)
+                        ServerResponse::new_with_toks(mreject, vec![tok])
                     }
                 }
             }
@@ -134,7 +154,7 @@ impl ChatApp {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid),
                         "Unverified ID".to_string());
-            ServerResponse::new(mreject)
+            ServerResponse::new_with_toks(mreject, vec![tok])
         }
     }
 
@@ -148,7 +168,7 @@ impl ChatApp {
                 Vacant(_) => {
                     let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
                         cm.sender().clone(), Reject(mid), "You are not currently in a room".to_string());
-                    ServerResponse::new(mreject)
+                    ServerResponse::new_with_toks(mreject, vec![tok])
                 },
 
                 //user is in a room, make it blank
@@ -156,7 +176,7 @@ impl ChatApp {
                     good_entry.remove();
                     let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                                 "SERVER".to_string(), cm.sender().clone(), Confirm(mid), "You've left the room.".to_string());
-                    ServerResponse::new(mconfirm)
+                    ServerResponse::new_with_toks(mconfirm, vec![tok])
                 }
             }
         } else {
@@ -165,7 +185,7 @@ impl ChatApp {
             let mreject = Message::new(cm.id().clone(), UTC::now(),
                         "SERVER".to_string(), cm.sender().clone(), Reject(mid),
                         "Unverified ID".to_string());
-            ServerResponse::new(mreject)
+            ServerResponse::new_with_toks(mreject, vec![tok])
         }
     }
 

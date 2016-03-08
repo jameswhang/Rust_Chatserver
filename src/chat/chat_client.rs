@@ -23,6 +23,8 @@ use std::{mem, str};
 use std::io::Cursor;
 use std::net::SocketAddr;
 use std::time::Duration;
+use std::thread;
+use std::sync::mpsc::{Sender, Receiver, channel};
 
 
 #[derive(Debug, PartialEq)]
@@ -40,6 +42,8 @@ pub struct ChatClient {
     pub id: Id,
 	state: ClientStatus,
 	game : ConnectFourClient,
+	stdin_reader : Option<Receiver<String>>,
+	stream_reader : Option<Receiver<String>>,
 }
 
 impl ChatClient {
@@ -51,10 +55,13 @@ impl ChatClient {
             id: "".to_string(),
             state: ClientStatus::SelectingRoom,
 			game: ConnectFourClient::new(&"".to_string()),
+			stdin_reader : None,
+			stream_reader : None,
         }
     }
 
 	pub fn start(&mut self) {
+		//makes user get an Id
 		self.set_id();
 
 		loop {
@@ -74,6 +81,7 @@ impl ChatClient {
 				ClientStatus::SelectingRoom => {
 					println!("Retrieving rooms...");
 					self.select_room();
+					//should have entered another room
 				},
 			}
 		}
@@ -103,7 +111,20 @@ impl ChatClient {
 	}
 
 	fn handle_in_room(&mut self) {
-		// self.stream.set_read_timeout(Duration::from_millis(500));
+		//make a worker to watch the stdin
+		let (stdin_tx, stdin_rx) = channel();
+		thread::spawn(move || {
+			watch_stdin(stdin_tx);
+		});
+		self.stdin_reader = Some(stdin_rx);
+
+		//make a worker to watch the TcpStream
+		let (stream_tx, stream_rx) = channel();
+		let stream_copy= self.stream.try_clone().expect("Failed to clone tcp stream for watcher");
+		thread::spawn(move || {
+			watch_stream(stream_tx, stream_copy);
+		});
+		self.stream_reader = Some(stream_rx);
 
 		loop {
 			//handles use input
@@ -130,11 +151,27 @@ impl ChatClient {
 	}
 
 	fn check_stdin(&mut self) -> Option<String> {
-		unimplemented!();
+		if let Some(ref rx) = self.stdin_reader {
+			if let Ok(input) = rx.try_recv() {
+				Some(input)
+			} else {
+				None
+			}
+		} else {
+			None
+		}
 	}
 
 	fn check_stream(&mut self) -> Option<String> {
-		unimplemented!();
+		if let Some(ref rx) = self.stream_reader {
+			if let Ok(message) = rx.try_recv() {
+				Some(message)
+			} else {
+				None
+			}
+		} else {
+			None
+		}
 	}
 
 	pub fn select_room(&mut self) {
@@ -274,7 +311,66 @@ impl ChatClient {
 		}
 	}
 
+
+
 	fn gen_message(&self, m_type : MessageType, content : &String) -> Message {
 		Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), m_type, content.clone())
+	}
+}
+
+fn watch_stdin(tx : Sender<String>) {
+	let stdin = io::stdin();
+	let mut input = String::new();
+
+	loop {
+		stdin.read_line(&mut input);
+
+		if let Ok(_) = tx.send(input.clone()) {
+
+		} else {
+			drop(tx);
+			break;
+		}
+	}
+}
+
+fn watch_stream(tx : Sender<String>, mut stream : TcpStream) {
+	loop {
+		if let Some(message) = read_msg(&mut stream) {
+			if let Ok(_) = tx.send(message.clone()) {
+				//message was sent
+			} else {
+				drop(tx);
+				break;
+			}
+		}
+	}
+}
+
+
+fn read_msg(mut stream : &mut TcpStream) -> Option<String> {
+	let mut buf = [0u8; 8];
+	stream.read(&mut buf).unwrap();
+
+	let msg_len = BigEndian::read_u64(&mut buf);
+	println!("Reading message length of {}",  msg_len);
+
+	let mut r = [0u8; 256];
+	let s_ref = <TcpStream as Read>::by_ref(&mut stream);
+
+	match s_ref.take(msg_len).read(&mut r) {
+		Ok(0) => {
+			println!("0 bytes read");
+			None
+		},
+		Ok(n) => {
+			println!("{} bytes read", n);
+			let s = str::from_utf8(&r[..]).unwrap();
+			println!("read = {}", s);
+			Some(s.to_string())
+		},
+		Err(e) => {
+			panic!("{}", e);
+		}
 	}
 }
