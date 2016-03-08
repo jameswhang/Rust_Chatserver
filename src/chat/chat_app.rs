@@ -4,9 +4,7 @@ extern crate chrono;
 use super::types::*;
 use super::message::*;
 use super::message::MessageType::*;
-//NEED TO FIX THIS
-type ChatRoom = String;
-// use super::chat_room::*;
+use super::chat_room::*;
 
 use self::mio::*;
 use self::mio::tcp::*;
@@ -29,7 +27,8 @@ pub struct ChatApp {
 impl ChatApp {
     pub fn new() -> ChatApp {
         let mut rooms = HashMap::new();
-        rooms.insert("RustLang".to_string(), ChatRoom::new());
+        let roomname = "RustLang".to_string();
+        rooms.insert(roomname.clone(), ChatRoom::new(roomname.clone()));
 
         ChatApp {
             conn_to_id : HashMap::new(),
