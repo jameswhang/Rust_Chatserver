@@ -7,13 +7,10 @@ use super::message::MessageType::*;
 use super::chat_room::*;
 
 use self::mio::*;
-use self::mio::tcp::*;
-use self::mio::util::Slab;
 use self::chrono::*;
 
 use std::collections::HashMap;
-use std::collections::hash_map::Entry::{self, Occupied, Vacant};
-use std::io::{Write};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ChatApp {

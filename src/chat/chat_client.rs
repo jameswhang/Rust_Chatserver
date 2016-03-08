@@ -10,7 +10,6 @@ use super::message::{MessageType, Message};
 use super::message::MessageType::*;
 use super::types::*;
 
-use std::sync::mpsc::sync_channel;
 use std::io::prelude::*;
 use std::io;
 use std::net::TcpStream;
@@ -18,13 +17,10 @@ use self::byteorder::{ByteOrder, BigEndian};
 use self::chrono::{UTC};
 use self::games::connectfour::ConnectFourClient;
 
-use super::chat_server::ChatServer;
-
 use std::thread;
-use std::{mem, str};
+use std::str;
 use std::io::Cursor;
 use std::net::SocketAddr;
-use std::time::Duration;
 use std::sync::mpsc::{Sender, Receiver, channel};
 
 
@@ -177,7 +173,7 @@ impl ChatClient {
 		println!("Retrieving rooms...\n");
 		let msg = Message::new("BADMID".to_string(), UTC::now(), self.id.clone(), "SERVER".to_string(), MessageType::Show, "".to_string());
 		self.send_msg(msg.to_string());
-		let mut buf = [0u8; 2048];
+		let buf = [0u8; 2048];
 
 		if let Some(raw_message) = self.read_msg() {
 			if let Some(message) = Message::from_string(&raw_message) {
