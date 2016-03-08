@@ -329,7 +329,7 @@ fn watch_stdin(tx : Sender<String>) {
 		stdin.read_line(&mut input);
 
 		if let Ok(_) = tx.send(input.clone()) {
-
+			input = "".to_string();
 		} else {
 			drop(tx);
 			break;

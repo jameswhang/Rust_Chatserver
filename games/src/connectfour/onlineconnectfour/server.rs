@@ -63,13 +63,17 @@ impl ConnectFourServer {
         } else if *self.game.whos_turn().id() != player_id {
             ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "It is not your turn yet"));
         } else {
+            println!("Attempting to parse: {}", message.content());
+            
             if let Ok(col) = message.content().parse::<usize>() {
+                println!("Request column: {}", col);
+
                 match self.game.make_move(col) {
                     Ok(_) => { ret.push(ConnectFourMessagePayload::new(&_server_id, Update, mcontent)); },
                     Err(_) => { ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again")); },
                 }
             } else {
-                ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Invalid column attempted. Try again"));
+                ret.push(ConnectFourMessagePayload::new_from_str(player_id, Update, "Could not parse. Invalid column attempted. Try again"));
             }
         }
 

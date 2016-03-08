@@ -71,7 +71,7 @@ impl ConnectFourClient {
     }
 
     fn make_update(&self, s : &String) -> Vec<String> {
-        vec![ConnectFourMessagePayload::new(&self.id, Exit, s.clone()).to_string()]
+        vec![ConnectFourMessagePayload::new(&self.id, Update, s.clone()).to_string()]
     }
 
     fn handle_join(&mut self, message : &ConnectFourMessagePayload) -> Vec<String> {
