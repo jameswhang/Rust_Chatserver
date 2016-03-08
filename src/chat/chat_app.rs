@@ -174,8 +174,11 @@ impl ChatApp {
                     // TODO// Add person to chat room
                     let roomname = cm.payload().trim().to_string();
 
-                    if self.id_to_room.contains_key(&roomname) {
+                    //SUCCESS!
+                    if let Some(chat_room) = self.id_to_room.get_mut(&roomname) {
                         good_entry.insert(roomname.clone());
+                        chat_room.join(&player_id);
+
                         let mconfirm = Message::new(cm.id().clone(), UTC::now(),
                                     "SERVER".to_string(), cm.sender().clone(), Confirm(mid), format!("Welcome to: {}", roomname.clone()));
                         vec![ServerResponse::new_with_toks(mconfirm, vec![tok])]
@@ -230,48 +233,64 @@ impl ChatApp {
 
 
     fn handle_action(&mut self, cm : Message, tok : Token) -> Vec<ServerResponse> {
-        unimplemented!();
-        // let player_id = cm.sender();
-        // let mid = cm.id().clone();
-        //
-        // if self.verify_id(&player_id, tok) {
-        //     match self.userid_to_room.get(player_id) {
-        //         //not in a room to leave from
-        //         None => {
-        //             let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
-        //                 cm.sender().clone(), Reject(mid), "You are not currently in a room".to_string());
-        //             vec![ServerResponse::new_with_toks(mreject, vec![tok])]
-        //         },
-        //
-        //         //user is in a room
-        //         Some(chat_room_id) => {
-        //             if let Some(chat_room) = self.id_to_room.get(chat_room_id) {
-        //                 //pass up the action, receive the response
-        //                 let responses = chat_room.handle_message(cm.payload().clone());
-        //                 let mut ret = vec![];
-        //                 //send all the responses
-        //                 for response in responses {
-        //                     let mconfirm = Message::new(cm.id().clone(), UTC::now(),
-        //                                 "SERVER".to_string(), cm.sender().clone(), Confirm(mid), response);
-        //
-        //                     ret.push(ServerResponse::new_with_toks(mconfirm, chat_room.clients().clone()));
-        //                 }
-        //                 return ret;
-        //             } else {
-        //                 let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
-        //                     cm.sender().clone(), Reject(mid), "Couldn't find your room".to_string());
-        //                 vec![ServerResponse::new_with_toks(mreject, vec![tok])]
-        //             }
-        //         }
-        //     }
-        // } else {
-        //     // Shouldn't even be here unless a fake ID was generated somehow
-        //     println!("WARNING: Unverified ID");
-        //     let mreject = Message::new(cm.id().clone(), UTC::now(),
-        //                 "SERVER".to_string(), cm.sender().clone(), Reject(mid),
-        //                 "Unverified ID".to_string());
-        //     vec![ServerResponse::new_with_toks(mreject, vec![tok])]
-        // }
+        let player_id = cm.sender();
+        let mid = cm.id().clone();
+
+        if self.verify_id(&player_id, tok) {
+            match self.userid_to_room.get(player_id) {
+                //not in a room to leave from
+                None => {
+                    let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
+                        cm.sender().clone(), Reject(mid), "You are not currently in a room".to_string());
+                    vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+                },
+
+                //user is in a room
+                Some(chat_room_id) => {
+                    if let Some(chat_room) = self.id_to_room.get_mut(chat_room_id) {
+                        //pass up the action, receive the response
+                        let mut ret = vec![];
+                        let mut clients = vec![];
+
+                        for client_id in chat_room.clients() {
+                            clients.push(self.id_to_conn.get(client_id).unwrap().clone());
+                        }
+
+                        match chat_room.handle_message(cm.payload().clone()) {
+                            Ok(responses) => {
+                                //send all the responses
+                                for response in responses {
+                                    let mconfirm = Message::new(cm.id().clone(), UTC::now(),
+                                                "SERVER".to_string(), cm.sender().clone(), Confirm(mid.clone()), response);
+
+                                    ret.push(ServerResponse::new_with_toks(mconfirm, clients.clone()));
+                                }
+                            },
+
+                            Err(s) => {
+                                let mreject = Message::new(cm.id().clone(), UTC::now(),
+                                            "SERVER".to_string(), cm.sender().clone(), Reject(mid), s.to_string());
+
+                                ret.push(ServerResponse::new_with_toks(mreject, clients.clone()));
+                            }
+                        }
+
+                        return ret;
+                    } else {
+                        let mreject = Message::new(cm.id().clone(), UTC::now(), "SERVER".to_string(),
+                            cm.sender().clone(), Reject(mid), "Couldn't find your room".to_string());
+                        vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+                    }
+                }
+            }
+        } else {
+            // Shouldn't even be here unless a fake ID was generated somehow
+            println!("WARNING: Unverified ID");
+            let mreject = Message::new(cm.id().clone(), UTC::now(),
+                        "SERVER".to_string(), cm.sender().clone(), Reject(mid),
+                        "Unverified ID".to_string());
+            vec![ServerResponse::new_with_toks(mreject, vec![tok])]
+        }
     }
 
 
