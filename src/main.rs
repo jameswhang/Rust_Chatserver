@@ -1,4 +1,4 @@
-#[doc="
+#![doc="
     @authors: Adel Lahlou, James Whang, Diane  Liu, Nevil George
 
     This usage of our program from the commandline is usage: cargo run [mode] [server_ip]:[server_port],
