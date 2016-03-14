@@ -14,7 +14,8 @@ Adel Lahlou, Diane Liu, James Whang, Nevil George
 * "join" allows you to join a connect four game if there is space
 * "leave" lets you leave the game if you are in it
 * Simply type your number to make a move
-* After the game is over, the board becomes a playground until at least one of the players leave!
+* After the game is over, the board becomes a playground until at least one of the players leave! 
+* Because you are interacting directly with the message passing system, the user has to keep track of the state of the board. The program is aware of who is the winner and keeps track of the winner even after playing around with it, but there is no feedback to the user at this time.
 
 ## Features
 * Uses mio Rust library to implement non-blocking server
